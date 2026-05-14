@@ -15,3 +15,5 @@ type Incidencia struct {
 	Tipo        string `json:"tipo"`
 	Estado      string `json:"estado"`
 }
+
+// ejemplo para commit
