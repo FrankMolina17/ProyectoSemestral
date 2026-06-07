@@ -1,145 +1,96 @@
 package storage
 
 import (
-	"errors"
-	"sync"
-
-	"Sistem-Inte-Gestion-Control-Obras/internal/models"
+    "errors"
+    "mi-proyecto/internal/models"
+    "sync"
+    "time"
 )
 
-const tasaImpuesto = 0.18
-
-var (
-	ErrProformaNoEncontrada = errors.New("proforma no encontrada")
-	ErrNombreRequerido      = errors.New("el nombre de la proforma es requerido")
-)
-
-// ProformaStorage almacena proformas en memoria.
+// Storage guarda todo en memoria
 type ProformaStorage struct {
-	mu        sync.RWMutex
-	proformas map[int]*models.Proforma
-	nextID    int
-	nextItem  int
+    mu          sync.Mutex
+    proformas   map[int]models.Proforma
+    items       map[int]models.ProformaItem
+    nextIDProf  int
+    nextIDItem  int
 }
 
-// NewProformaStorage crea un almacenamiento vacío en memoria.
+// New crea un storage vacío listo para usar
 func NewProformaStorage() *ProformaStorage {
-	return &ProformaStorage{
-		proformas: make(map[int]*models.Proforma),
-		nextID:    1,
-		nextItem:  1,
-	}
+    return &ProformaStorage{
+        proformas:  make(map[int]models.Proforma),
+        items:      make(map[int]models.ProformaItem),
+        nextIDProf: 1,
+        nextIDItem: 1,
+    }
 }
 
-// Crear guarda una nueva proforma y calcula sus totales.
-func (s *ProformaStorage) Crear(p *models.Proforma) (*models.Proforma, error) {
-	if p.Nombre == "" {
-		return nil, ErrNombreRequerido
-	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *ProformaStorage) Create(p models.Proforma) models.Proforma {
+    s.mu.Lock()
+    defer s.mu.Unlock()
 
-	copia := *p
-	copia.ID = s.nextID
-	s.nextID++
+    p.ID = s.nextIDProf
+    p.Estado = "borrador"
+    p.CreadoEn = time.Now()
+    p.Subtotal = 0
+    p.Total = 0
 
-	for i := range copia.Items {
-		copia.Items[i].ID = s.nextItem
-		s.nextItem++
-	}
-
-	if copia.Estado == "" {
-		copia.Estado = "borrador"
-	}
-
-	calcularTotales(&copia)
-	s.proformas[copia.ID] = &copia
-
-	return &copia, nil
+    s.proformas[p.ID] = p
+    s.nextIDProf++
+    return p
 }
 
-// ObtenerPorID devuelve una proforma por su identificador.
-func (s *ProformaStorage) ObtenerPorID(id int) (*models.Proforma, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+func (s *ProformaStorage) GetByID(id int) (models.Proforma, error) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
 
-	p, ok := s.proformas[id]
-	if !ok {
-		return nil, ErrProformaNoEncontrada
-	}
-
-	copia := *p
-	return &copia, nil
+    p, ok := s.proformas[id]
+    if !ok {
+        return models.Proforma{}, errors.New("proforma no encontrada")
+    }
+    return p, nil
 }
 
-// Listar devuelve todas las proformas registradas.
-func (s *ProformaStorage) Listar() []models.Proforma {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+func (s *ProformaStorage) GetAll() []models.Proforma {
+    s.mu.Lock()
+    defer s.mu.Unlock()
 
-	resultado := make([]models.Proforma, 0, len(s.proformas))
-	for _, p := range s.proformas {
-		resultado = append(resultado, *p)
-	}
-
-	return resultado
+    lista := make([]models.Proforma, 0, len(s.proformas))
+    for _, p := range s.proformas {
+        lista = append(lista, p)
+    }
+    return lista
 }
 
-// Actualizar modifica una proforma existente y recalcula sus totales.
-func (s *ProformaStorage) Actualizar(id int, actualizada models.Proforma) (*models.Proforma, error) {
-	if actualizada.Nombre == "" {
-		return nil, ErrNombreRequerido
-	}
+func (s *ProformaStorage) Update(id int, datos models.Proforma) (models.Proforma, error) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
+    p, ok := s.proformas[id]
+    if !ok {
+        return models.Proforma{}, errors.New("proforma no encontrada")
+    }
 
-	if _, ok := s.proformas[id]; !ok {
-		return nil, ErrProformaNoEncontrada
-	}
+    // Solo actualizas los campos editables
+    p.Nombre = datos.Nombre
+    p.PctGanancia = datos.PctGanancia
+    p.PctImprevisto = datos.PctImprevisto
 
-	actualizada.ID = id
-
-	for i := range actualizada.Items {
-		if actualizada.Items[i].ID == 0 {
-			actualizada.Items[i].ID = s.nextItem
-			s.nextItem++
-		}
-	}
-
-	calcularTotales(&actualizada)
-	s.proformas[id] = &actualizada
-
-	return &actualizada, nil
+    s.proformas[id] = p
+    return p, nil
 }
 
-// Calcular recalcula subtotales, impuestos y total de una proforma.
-func (s *ProformaStorage) Calcular(id int) (*models.Proforma, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *ProformaStorage) Delete(id int) error {
+    s.mu.Lock()
+    defer s.mu.Unlock()
 
-	p, ok := s.proformas[id]
-	if !ok {
-		return nil, ErrProformaNoEncontrada
-	}
+    _, ok := s.proformas[id]
+    if !ok {
+        return errors.New("proforma no encontrada")
+    }
 
-	calcularTotales(p)
-
-	copia := *p
-	return &copia, nil
-}
-
-func calcularTotales(p *models.Proforma) {
-	var subtotal float64
-
-	for i := range p.Items {
-		item := &p.Items[i]
-		item.Subtotal = item.Cantidad * item.PrecioUnit
-		subtotal += item.Subtotal
-	}
-
-	p.Subtotal = subtotal
-	p.Impuestos = subtotal * tasaImpuesto
-	p.Total = p.Subtotal + p.Impuestos
+    delete(s.proformas, id)
+    return nil
 }
