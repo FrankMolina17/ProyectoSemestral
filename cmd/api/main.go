@@ -1,24 +1,38 @@
 package main
 
 import (
-	"Sistem-Inte-Gestion-Control-Obras/internal/routes"
-	"fmt"
+	"log"
 	"net/http"
+
+	"Sistem-Inte-Gestion-Control-Obras/internal/handlers"
+	"Sistem-Inte-Gestion-Control-Obras/internal/routes"
+	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 )
-
 func main() {
+	proformaStore := storage.NewProformaStorage()
+	proformaHandler := handlers.NewProformaHandler(proformaStore)
+
 	r := chi.NewRouter()
 
-	// Ruta de prueba
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(" Sistem-Inte-Gestion-Control-Obras/internal/routes - Servidor funcionando correctamente"))
-	})
-
-	// Registrar las rutas de tu módulo
 	routes.RegisterRoutes(r)
 
-	fmt.Println("Servidor corriendo en http://localhost:8080")
-	http.ListenAndServe(":8080", r)
+	// Módulo 2 — Proformas y Cálculo
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Post("/proformas", proformaHandler.CrearProforma)
+		r.Get("/proformas", proformaHandler.ListarProformas)
+		r.Get("/proformas/{id}", proformaHandler.ObtenerProforma)
+		r.Put("/proformas/{id}", proformaHandler.ActualizarProforma)
+
+		// Items
+		r.Put("/proformas/{id}/aprobar", proformaHandler.CalcularProforma)
+	})
+	const addr = ":3000" //http://localhost:3000
+	log.Printf("API escuchando en %s", addr)
+	if err := http.ListenAndServe(addr, r); err != nil {
+		log.Fatal(err)
+	}
 }
+
+
