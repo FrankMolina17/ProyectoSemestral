@@ -10,9 +10,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 )
+
 func main() {
-	proformaStore := storage.NewProformaStorage()
-	proformaHandler := handlers.NewProformaHandler(proformaStore)
+	proformaStore := storage.NuevoStorage()
+	proformaHandler := handlers.NuevoHandler(proformaStore)
 
 	r := chi.NewRouter()
 
@@ -21,18 +22,14 @@ func main() {
 	// Módulo 2 — Proformas y Cálculo
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Post("/proformas", proformaHandler.CrearProforma)
-		r.Get("/proformas", proformaHandler.ListarProformas)
-		r.Get("/proformas/{id}", proformaHandler.ObtenerProforma)
+		r.Get("/proformas", proformaHandler.ObtenerTodos)
+		r.Get("/proformas/{id}", proformaHandler.ObtenerPorID)
 		r.Put("/proformas/{id}", proformaHandler.ActualizarProforma)
-
-		// Items
-		r.Put("/proformas/{id}/aprobar", proformaHandler.CalcularProforma)
+		r.Delete("/proformas/{id}", proformaHandler.EliminarProforma)
 	})
-	const addr = ":3000" //http://localhost:3000
+	const addr = ":3000"
 	log.Printf("API escuchando en %s", addr)
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatal(err)
 	}
 }
-
-
