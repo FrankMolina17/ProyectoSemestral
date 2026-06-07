@@ -94,3 +94,54 @@ func (s *ProformaStorage) EliminarProforma(id int) error {
     delete(s.proformas, id)
     return nil
 }
+
+func (s *ProformaStorage) AgregarItem(item models.ProformaItem) (models.ProformaItem, error) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+
+    // Verificar que la proforma existe
+    _, ok := s.proformas[item.ProformaID]
+    if !ok {
+        return models.ProformaItem{}, errors.New("proforma no encontrada")
+    }
+
+    // Calcular subtotal del ítem
+    item.ID = s.nextIDItem
+    item.Subtotal = item.Cantidad * item.PrecioPromedio
+
+    s.items[item.ID] = item
+    s.nextIDItem++
+
+    // Recalcular totales de la proforma
+    s.recalcularTotales(item.ProformaID)
+
+    return item, nil
+}
+
+func (s *ProformaStorage) ObtenerItems(proformaID int) []models.ProformaItem {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+
+    lista := make([]models.ProformaItem, 0)
+    for _, item := range s.items {
+        if item.ProformaID == proformaID {
+            lista = append(lista, item)
+        }
+    }
+    return lista
+}
+
+func (s *ProformaStorage) recalcularTotales(proformaID int) {
+    p := s.proformas[proformaID]
+    subtotal := 0.0
+
+    for _, item := range s.items {
+        if item.ProformaID == proformaID {
+            subtotal += item.Subtotal
+        }
+    }
+
+    p.Subtotal = subtotal
+    p.Total = subtotal + (subtotal * p.PctGanancia) + (subtotal * p.PctImprevisto)
+    s.proformas[proformaID] = p
+}

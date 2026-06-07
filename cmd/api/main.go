@@ -23,6 +23,10 @@ r.Route("/api/v1", func(r chi.Router) {
     r.Get("/proformas/{id}", proformaHandler.ObtenerPorID)
     r.Put("/proformas/{id}", proformaHandler.ActualizarProforma)
     r.Delete("/proformas/{id}", proformaHandler.EliminarProforma)
+
+	// Items
+	r.Post("/proformas/{id}/items", proformaHandler.AgregarItem)
+    r.Get("/proformas/{id}/items", proformaHandler.ObtenerItems)
 })
 	const addr = ":3000"
 	log.Printf("API escuchando en %s", addr)

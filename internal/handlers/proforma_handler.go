@@ -139,3 +139,67 @@ func (h *ProformaHandler) EliminarProforma(w http.ResponseWriter, r *http.Reques
         "mensaje": "proforma eliminada correctamente",
     })
 }
+
+func (h *ProformaHandler) AgregarItem(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        responderJSON(w, http.StatusBadRequest, map[string]string{
+            "error": "id inválido",
+        })
+        return
+    }
+
+    var item models.ProformaItem
+    if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
+        responderJSON(w, http.StatusBadRequest, map[string]string{
+            "error": "cuerpo del request inválido",
+        })
+        return
+    }
+
+    // Validación básica
+    if item.Descripcion == "" {
+        responderJSON(w, http.StatusBadRequest, map[string]string{
+            "error": "el campo descripcion es requerido",
+        })
+        return
+    }
+    if item.Cantidad <= 0 {
+        responderJSON(w, http.StatusBadRequest, map[string]string{
+            "error": "la cantidad debe ser mayor a 0",
+        })
+        return
+    }
+    if item.PrecioPromedio <= 0 {
+        responderJSON(w, http.StatusBadRequest, map[string]string{
+            "error": "el precio debe ser mayor a 0",
+        })
+        return
+    }
+
+    item.ProformaID = id
+    creado, err := h.storage.AgregarItem(item)
+    if err != nil {
+        responderJSON(w, http.StatusNotFound, map[string]string{
+            "error": "proforma no encontrada",
+        })
+        return
+    }
+
+    responderJSON(w, http.StatusCreated, creado)
+}
+
+func (h *ProformaHandler) ObtenerItems(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        responderJSON(w, http.StatusBadRequest, map[string]string{
+            "error": "id inválido",
+        })
+        return
+    }
+
+    items := h.storage.ObtenerItems(id)
+    responderJSON(w, http.StatusOK, items)
+}
