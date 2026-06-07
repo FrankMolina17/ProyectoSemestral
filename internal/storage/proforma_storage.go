@@ -2,7 +2,7 @@ package storage
 
 import (
     "errors"
-    "mi-proyecto/internal/models"
+	"Sistem-Inte-Gestion-Control-Obras/internal/models"
     "sync"
     "time"
 )
@@ -17,7 +17,7 @@ type ProformaStorage struct {
 }
 
 // New crea un storage vacío listo para usar
-func NewProformaStorage() *ProformaStorage {
+func NuevoStorage() *ProformaStorage {
     return &ProformaStorage{
         proformas:  make(map[int]models.Proforma),
         items:      make(map[int]models.ProformaItem),
@@ -27,7 +27,7 @@ func NewProformaStorage() *ProformaStorage {
 }
 
 
-func (s *ProformaStorage) Create(p models.Proforma) models.Proforma {
+func (s *ProformaStorage) CrearProforma(p models.Proforma) models.Proforma {
     s.mu.Lock()
     defer s.mu.Unlock()
 
@@ -42,7 +42,7 @@ func (s *ProformaStorage) Create(p models.Proforma) models.Proforma {
     return p
 }
 
-func (s *ProformaStorage) GetByID(id int) (models.Proforma, error) {
+func (s *ProformaStorage) ObtenerPorID(id int) (models.Proforma, error) {
     s.mu.Lock()
     defer s.mu.Unlock()
 
@@ -53,7 +53,7 @@ func (s *ProformaStorage) GetByID(id int) (models.Proforma, error) {
     return p, nil
 }
 
-func (s *ProformaStorage) GetAll() []models.Proforma {
+func (s *ProformaStorage) ObtenerTodos() []models.Proforma {
     s.mu.Lock()
     defer s.mu.Unlock()
 
@@ -64,7 +64,7 @@ func (s *ProformaStorage) GetAll() []models.Proforma {
     return lista
 }
 
-func (s *ProformaStorage) Update(id int, datos models.Proforma) (models.Proforma, error) {
+func (s *ProformaStorage) ActualizarProforma(id int, datos models.Proforma) (models.Proforma, error) {
     s.mu.Lock()
     defer s.mu.Unlock()
 
@@ -82,7 +82,7 @@ func (s *ProformaStorage) Update(id int, datos models.Proforma) (models.Proforma
     return p, nil
 }
 
-func (s *ProformaStorage) Delete(id int) error {
+func (s *ProformaStorage) EliminarProforma(id int) error {
     s.mu.Lock()
     defer s.mu.Unlock()
 

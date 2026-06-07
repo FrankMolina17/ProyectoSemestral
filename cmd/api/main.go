@@ -6,22 +6,29 @@ import (
 
 	"Sistem-Inte-Gestion-Control-Obras/internal/handlers"
 	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-	proformaStore := storage.NewProformaStorage()
-	proformaHandler := handlers.NewProformaHandler(proformaStore)
+	proformaStore := storage.NuevoStorage()
+	proformaHandler := handlers.NuevoHandler(proformaStore)
 
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
 
-	// Módulo 2 — Proformas y Cálculo
-	mux.HandleFunc("POST /proformas", proformaHandler.CrearProforma)
-	mux.HandleFunc("GET /proformas", proformaHandler.ListarProformas)
-	mux.HandleFunc("GET /proformas/{id}", proformaHandler.ObtenerProforma)
-	mux.HandleFunc("PUT /proformas/{id}", proformaHandler.ActualizarProforma)
-	mux.HandleFunc("POST /proformas/{id}/calcular", proformaHandler.CalcularProforma)
-
-	const addr = ":8080"
+// Módulo 2 — Proformas y Cálculo
+r.Route("/api/v1", func(r chi.Router) {
+    r.Post("/proformas", proformaHandler.CrearProforma)
+    r.Get("/proformas", proformaHandler.ObtenerTodos)
+    r.Get("/proformas/{id}", proformaHandler.ObtenerPorID)
+    r.Put("/proformas/{id}", proformaHandler.ActualizarProforma)
+    r.Delete("/proformas/{id}", proformaHandler.EliminarProforma)
+})
+	const addr = ":3000"
 	log.Printf("API escuchando en %s", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	if err := http.ListenAndServe(addr, r); err != nil {
+		log.Fatal(err)
+	}
 }
+
+
