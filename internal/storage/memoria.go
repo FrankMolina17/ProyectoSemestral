@@ -47,7 +47,7 @@ func (s *Storage) nextID() int {
 // MATERIALES
 // ─────────────────────────────────────────────
 
-func (s *Storage) ListMateriales(nombre, unidad string) []*models.Material {
+func (s *Storage) ListarMateriales(nombre, unidad string) []*models.Material {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
