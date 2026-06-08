@@ -14,13 +14,13 @@ import (
 func New(s *storage.Storage) chi.Router {
 	r := chi.NewRouter()
 
-	// ── Middlewares globales ──────────────────────────────────────────────────
+	
 	r.Use(chimiddleware.Logger)
 	r.Use(chimiddleware.Recoverer)
 	r.Use(chimiddleware.RequestID)
 	r.Use(chimiddleware.RealIP)
 
-	// ── Subrouter /api/v1/catalogo ────────────────────────────────────────────
+	// /api/v1/catalogo ────────────────────────────────────────────
 	r.Route("/api/v1/catalogo", func(r chi.Router) {
 
 		// Todos los endpoints del catálogo requieren JWT
