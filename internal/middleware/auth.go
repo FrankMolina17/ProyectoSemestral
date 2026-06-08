@@ -38,6 +38,7 @@ func AuthJWT(next http.Handler) http.Handler {
 		}
 
 		// verificar firma JWT con golang-jwt/jwt y extraer claims reales.
+		
 		// Por ahora almacenamos el token crudo como "userID" en el contexto.
 		ctx := context.WithValue(r.Context(), UserIDKey, token)
 		next.ServeHTTP(w, r.WithContext(ctx))
