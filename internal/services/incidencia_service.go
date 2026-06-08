@@ -90,18 +90,16 @@ func ActualizarIncidencia(id int, incidencia models.Incidencia) (models.Incidenc
 			}
 			return storage.Incidencias[i], nil
 		}
-	}	
+	}
 	return models.Incidencia{}, errors.New("incidencia no encontrada")
 }
 
-
-func eliminarIncidencia(id int) error {
+func EliminarIncidencia(id int) error {
 	for i, inc := range storage.Incidencias {
-		if inc.ID == id {			
-			// Eliminar incidencia del slice
+		if inc.ID == id {
 			storage.Incidencias = append(storage.Incidencias[:i], storage.Incidencias[i+1:]...)
 			return nil
-		}	
+		}
 	}
 	return errors.New("incidencia no encontrada")
 }

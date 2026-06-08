@@ -97,6 +97,8 @@ func ActualizarIncidenciaHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func EliminarIncidenciaHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -104,10 +106,11 @@ func EliminarIncidenciaHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if services.EliminarIncidencia(id) {
-		w.WriteHeader(http.StatusNoContent)
+	err = services.EliminarIncidencia(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	http.Error(w, "Incidencia no encontrada", http.StatusNotFound)
+	w.WriteHeader(http.StatusNoContent) // 204 No Content
 }
