@@ -6,7 +6,7 @@ import (
 	"errors"
 )
 
-func CrearObra(obra models.Obra) (models.Obra, error) {
+func CrearObraServicio(obra models.Obra) (models.Obra, error) {
 	if obra.Nombre == "" {
 		return obra, errors.New("el nombre de la obra es obligatorio")
 	}

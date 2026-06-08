@@ -48,7 +48,7 @@ func CrearIncidencia(incidencia models.Incidencia) (models.Incidencia, error) {
 	return incidencia, nil
 }
 
-func ObtenerObras() []models.Obra {
+func ObtenerTodasObras() []models.Obra {
 	return storage.Obras
 }
 

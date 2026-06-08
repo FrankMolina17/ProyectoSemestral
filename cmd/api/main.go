@@ -13,7 +13,7 @@ func main() {
 
 	// Ruta de prueba
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("🚀 LigaFit-AWII2026 - Servidor funcionando correctamente"))
+		w.Write([]byte(" Sistem-Inte-Gestion-Control-Obras/internal/routes - Servidor funcionando correctamente"))
 	})
 
 	// Registrar las rutas de tu módulo
