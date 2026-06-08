@@ -7,17 +7,21 @@ import(
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 )
 
-func (s *Storage) Seed(){
+
+
+// Seed carga datos de prueba realistas en el store.
+// Se llama una sola vez desde main.go al iniciar el servidor.
+func (s *Storage) Seed() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	now := time.Now().UTC()
 	hace30 := now.AddDate(0, -1, 0)
 	hace60 := now.AddDate(0, -2, 0)
-}
-	
-// MATERIALES
-// ─────────────────────────────────────────────
+
+	// ─────────────────────────────────────────────
+	// MATERIALES
+	// ─────────────────────────────────────────────
 
 	materiales := []struct {
 		nombre      string
