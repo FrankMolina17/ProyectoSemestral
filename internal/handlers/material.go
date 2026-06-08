@@ -19,7 +19,7 @@ func NewMaterialHandler(s *storage.Storage) *MaterialHandler {
 
 
 // GET /api/v1/catalogo/material
-func (h *MaterialHandler) List(w http.ResponseWriter, r *http.Request) {
+func (h *MaterialHandler) Lista(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	nombre := q.Get("nombre")
 	unidad := q.Get("unidad")
@@ -30,7 +30,7 @@ func (h *MaterialHandler) List(w http.ResponseWriter, r *http.Request) {
 
 // GET 
 // Obtiene un material por su ID.
-func (h *MaterialHandler) GetByID(w http.ResponseWriter, r *http.Request) {
+func (h *MaterialHandler) ObtenerUnMaterial(w http.ResponseWriter, r *http.Request) {
 	id, ok := urlParamID(w, r, "id")
 	if !ok {
 		return
@@ -44,7 +44,7 @@ func (h *MaterialHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // POST /materiales
-func (h *MaterialHandler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *MaterialHandler) CrearUnMaterial(w http.ResponseWriter, r *http.Request) {
 	var in models.MaterialInput
 	if !decodeJSON(w, r, &in) {
 		return
@@ -63,7 +63,7 @@ func (h *MaterialHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 // PUT 
 // Actualiza un material existente.
-func (h *MaterialHandler) Replace(w http.ResponseWriter, r *http.Request) {
+func (h *MaterialHandler) ActulizarUnMaterial(w http.ResponseWriter, r *http.Request) {
 	id, ok := urlParamID(w, r, "id")
 	if !ok {
 		return
@@ -86,7 +86,7 @@ func (h *MaterialHandler) Replace(w http.ResponseWriter, r *http.Request) {
 
 // DELETE 
 // Elimina un material existente.
-func (h *MaterialHandler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *MaterialHandler) BorrarUnMaterial(w http.ResponseWriter, r *http.Request) {
 	id, ok := urlParamID(w, r, "id")
 	if !ok {
 		return
