@@ -16,7 +16,7 @@ func NewEquipoHandler(s *storage.Storage) *EquipoHandler {
 }
 
 //ListarEquipo
-func (h *EquipoHandler) Lista(w http.ResponseWriter, r *http.Request) { //esto es para obtener todos los equipos
+func (h *EquipoHandler) ListaUnEquipo(w http.ResponseWriter, r *http.Request) { //esto es para obtener todos los equipos
 	q := r.URL.Query() 
 	tipo := q.Get("tipo")
 
@@ -36,7 +36,7 @@ func (h *EquipoHandler) Lista(w http.ResponseWriter, r *http.Request) { //esto e
 
 
 //Get
-func (h *EquipoHandler) ObtenerporID(w http.ResponseWriter, r *http.Request) { //esto es para obtener un equipo
+func (h *EquipoHandler) ObtenerporUnIDEquipo(w http.ResponseWriter, r *http.Request) { //esto es para obtener un equipo
 	id, ok := urlParamID(w, r, "id")
 	if !ok {
 		return
@@ -50,7 +50,7 @@ func (h *EquipoHandler) ObtenerporID(w http.ResponseWriter, r *http.Request) { /
 }
 
 //Post
-func (h *EquipoHandler) Crear(w http.ResponseWriter, r *http.Request) {//esto es para crear un equipo
+func (h *EquipoHandler) CrearUnEquipo(w http.ResponseWriter, r *http.Request) {//esto es para crear un equipo
 	var in models.EquipoInput //esto es para crear un equipo
 	if !decodeJSON(w, r, &in) { //esto es para crear un equipo
 		return
@@ -66,6 +66,30 @@ func (h *EquipoHandler) Crear(w http.ResponseWriter, r *http.Request) {//esto es
 	}
 	respondCreated(w, eq, eq.ID) 
 }
+
+// PUT /equipos/:id
+// Actualiza un equipo existente.
+func (h *EquipoHandler) ActualizarUnEquipo(w http.ResponseWriter, r *http.Request) {
+	id, ok := urlParamID(w, r, "id")
+	if !ok {
+		return
+	}
+	var in models.EquipoInput
+	if !decodeJSON(w, r, &in) {
+		return
+	}
+	if err := in.Validate(); err != nil {
+		respondError(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	eq, err := h.s.ActualizarEquipo(id, in)
+	if err != nil {
+		mapStoreError(w, err, "equipo", id)
+		return
+	}
+	respondOK(w, eq)
+}
+
 
 //Patch
 func (h *EquipoHandler) PatchDisponibilidad(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +110,7 @@ func (h *EquipoHandler) PatchDisponibilidad(w http.ResponseWriter, r *http.Reque
 }
 
 // DELETE /equipos/:id
-func (h *EquipoHandler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *EquipoHandler) BorrarUnEquipo(w http.ResponseWriter, r *http.Request) {
 	id, ok := urlParamID(w, r, "id")
 	if !ok {
 		return
