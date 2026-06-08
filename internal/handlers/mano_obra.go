@@ -51,3 +51,38 @@ func (h *ManoObraHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	respondCreated(w, mo, mo.ID)
 }
+
+// PUT /mano-obra/:id
+func (h *ManoObraHandler) Replace(w http.ResponseWriter, r *http.Request) {
+	id, ok := urlParamID(w, r, "id")
+	if !ok {
+		return
+	}
+	var in models.ManoObraInput
+	if !decodeJSON(w, r, &in) {
+		return
+	}
+	if err := in.Validate(); err != nil {
+		respondError(w, http.StatusUnprocessableEntity, err.Error())
+		return
+	}
+	mo, err := h.s.ActualizarManoObra(id, in)
+	if err != nil {
+		mapStoreError(w, err, "mano_obra", id)
+		return
+	}
+	respondOK(w, mo)
+}
+
+// DELETE /mano-obra/:id
+func (h *ManoObraHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id, ok := urlParamID(w, r, "id")
+	if !ok {
+		return
+	}
+	if err := h.s.BorrarManoObra(id); err != nil {
+		mapStoreError(w, err, "mano_obra", id)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
