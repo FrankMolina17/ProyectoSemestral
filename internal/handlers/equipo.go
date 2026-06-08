@@ -34,7 +34,9 @@ func (h *EquipoHandler) Lista(w http.ResponseWriter, r *http.Request) { //esto e
 	respondOK(w, list)
 }
 
-func (h *EquipoHandler) GetByID(w http.ResponseWriter, r *http.Request) { //esto es para obtener un equipo
+
+//Get
+func (h *EquipoHandler) ObtenerporID(w http.ResponseWriter, r *http.Request) { //esto es para obtener un equipo
 	id, ok := urlParamID(w, r, "id")
 	if !ok {
 		return
@@ -49,8 +51,8 @@ func (h *EquipoHandler) GetByID(w http.ResponseWriter, r *http.Request) { //esto
 
 //Post
 func (h *EquipoHandler) Crear(w http.ResponseWriter, r *http.Request) {//esto es para crear un equipo
-	var in models.EquipoInput
-	if !decodeJSON(w, r, &in) {
+	var in models.EquipoInput //esto es para crear un equipo
+	if !decodeJSON(w, r, &in) { //esto es para crear un equipo
 		return
 	}
 	if err := in.Validate(); err != nil {
@@ -62,9 +64,10 @@ func (h *EquipoHandler) Crear(w http.ResponseWriter, r *http.Request) {//esto es
 		mapStoreError(w, err, "equipo", 0)
 		return
 	}
-	respondCreated(w, eq, eq.ID)
+	respondCreated(w, eq, eq.ID) 
 }
 
+//Patch
 func (h *EquipoHandler) PatchDisponibilidad(w http.ResponseWriter, r *http.Request) {
 	id, ok := urlParamID(w, r, "id")
 	if !ok {
