@@ -108,7 +108,7 @@ func (h *MaterialHandler) CreandoMaterial(w http.ResponseWriter, r *http.Request
 	if !DecodificarJSON(w, r, &in) {
 		return
 	}
-	if err := in.Validate(); err != nil {
+	if err := in.ValidarMaterial(); err != nil {
 		MalFormado(w, err.Error())
 		return
 	}
@@ -130,7 +130,7 @@ func (h *MaterialHandler) ActulizarUnMaterial(w http.ResponseWriter, r *http.Req
 	if !DecodificarJSON(w, r, &in) {
 		return
 	}
-	if err := in.Validate(); err != nil {
+	if err := in.ValidarMaterial(); err != nil {
 		MalFormado(w, err.Error())
 		return
 	}
@@ -193,7 +193,7 @@ func (h *ManoObraHandler) CreandoUnaManoObra(w http.ResponseWriter, r *http.Requ
 	if !DecodificarJSON(w, r, &in) {
 		return
 	}
-	if err := in.Validate(); err != nil {
+	if err := in.ValidarManoObra(); err != nil {
 		MalFormado(w, err.Error())
 		return
 	}
@@ -215,7 +215,7 @@ func (h *ManoObraHandler) ActualizadoUnaManoObra(w http.ResponseWriter, r *http.
 	if !DecodificarJSON(w, r, &in) {
 		return
 	}
-	if err := in.Validate(); err != nil {
+	if err := in.ValidarManoObra(); err != nil {
 		MalFormado(w, err.Error())
 		return
 	}
@@ -278,7 +278,7 @@ func (h *EquipoHandler) CrearUnEquipo(w http.ResponseWriter, r *http.Request) {
 	if !DecodificarJSON(w, r, &in) {
 		return
 	}
-	if err := in.Validate(); err != nil {
+	if err := in.ValidarEquipo(); err != nil {
 		MalFormado(w, err.Error())
 		return
 	}
@@ -300,7 +300,7 @@ func (h *EquipoHandler) ActualizarUnEquipo(w http.ResponseWriter, r *http.Reques
 	if !DecodificarJSON(w, r, &in) {
 		return
 	}
-	if err := in.Validate(); err != nil {
+	if err := in.ValidarEquipo(); err != nil {
 		MalFormado(w, err.Error())
 		return
 	}
@@ -347,7 +347,7 @@ func (h *PrecioHandler) CrearUnPrecio(w http.ResponseWriter, r *http.Request) {
 	if !DecodificarJSON(w, r, &in) {
 		return
 	}
-	if err := in.Validate(); err != nil {
+	if err := in.ValidarPrecio(); err != nil {
 		MalFormado(w, err.Error())
 		return
 	}
