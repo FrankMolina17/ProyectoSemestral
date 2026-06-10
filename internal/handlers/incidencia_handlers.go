@@ -33,6 +33,10 @@ func CrearIncidenciaHandler(w http.ResponseWriter, r *http.Request) {
 func ObtenerIncidenciasHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	incidencias := services.ObtenerIncidencias()
+	if len(incidencias) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	json.NewEncoder(w).Encode(incidencias)
 }
 
@@ -68,6 +72,10 @@ func ObtenerIncidenciasPorEntidadHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	incidencias := services.ObtenerIncidenciasPorEntidad(entidadTipo, entidadID)
+	if len(incidencias) == 0 {
+		http.Error(w, "Incidencia no encontrada", http.StatusNotFound)
+		return
+	}
 	json.NewEncoder(w).Encode(incidencias)
 }
 
