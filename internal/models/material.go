@@ -36,7 +36,7 @@ var unidadesPermitidas = map[string]bool{
 	"ml": true, "lt": true, "gl": true,
 }
 
-func (m EntradaMaterial) Validate() error {
+func (m EntradaMaterial) ValidarMaterial() error {
 	if m.Nombre == "" {
 		return errors.New("campo 'nombre' requerido")
 	}
@@ -79,7 +79,7 @@ var unidadesManoObra = map[string]bool{
 	"hora": true, "día": true, "jornal": true,
 }
 
-func (m EntradaManoObra) Validate() error {
+func (m EntradaManoObra) ValidarManoObra() error {
 	if m.Descripcion == "" {
 		return errors.New("campo 'descripcion' requerido")
 	}
@@ -121,7 +121,7 @@ var tiposEquipo = map[string]bool{
 	"pesado": true, "liviano": true,
 }
 
-func (e EntradaEquipo) Validate() error {
+func (e EntradaEquipo) ValidarEquipo() error {
 	if e.Nombre == "" {
 		return errors.New("campo 'nombre' requerido")
 	}
@@ -161,7 +161,7 @@ var RecursosTipos = map[string]bool{
 	"material": true, "mano_obra": true, "equipo": true,
 }
 
-func (p EntradaPrecioRecurso) Validate() error {
+func (p EntradaPrecioRecurso) ValidarPrecio() error {
 	if !RecursosTipos[p.RecursoTipo] {
 		return errors.New("recurso_tipo debe ser: material, mano_obra, equipo")
 	}
