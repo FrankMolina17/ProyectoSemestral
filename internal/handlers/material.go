@@ -240,6 +240,7 @@ func (h *ManoObraHandler) BorrandoUnaManoObra(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusNoContent)
 }
 
+
 // ─────────────────────────────────────────────
 // EQUIPO
 // ─────────────────────────────────────────────
