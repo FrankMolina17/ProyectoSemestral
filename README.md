@@ -9,13 +9,9 @@ Gestiona: materiales, mano de obra, equipos, historial de precios.
 Permite mantener recursos organizados y actualizados para los cálculos de presupuestos. 
 
 M2 — Proformas y Cálculo. 
-
 Gestiona: presupuestos, cálculos automáticos, costos de materiales, mano de obra y equipos.  
-
 Este módulo permite generar proformas y estimar costos reales de una obra. 
-## Módulo 2 — Proformas y Cálculo
-
-### Endpoints disponibles
+Endpoints disponibles
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
@@ -28,7 +24,7 @@ Este módulo permite generar proformas y estimar costos reales de una obra.
 | GET | /api/v1/proformas/{id}/items | Listar ítems |
 | PUT | /api/v1/proformas/{id}/aprobar | Aprobar proforma |
 
-### Método de costeo
+M2 - Método de costeo
 El módulo usa precio promedio. El total se calcula como:
 subtotal + (subtotal × pct_ganancia) + (subtotal × pct_imprevisto)
 
