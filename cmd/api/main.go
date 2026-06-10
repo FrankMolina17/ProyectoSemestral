@@ -7,19 +7,18 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 
-    "Sistem-Inte-Gestion-Control-Obras/internal/handlers"
-    "Sistem-Inte-Gestion-Control-Obras/internal/middleware"
-    "Sistem-Inte-Gestion-Control-Obras/internal/storage"
+	"Sistem-Inte-Gestion-Control-Obras/internal/handlers"
+	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
 )
 
 // modulo 1: Catalogo de Recursos
 func main() {
 
-	// Inicializar store y seed de datos
+	// Inicializar storage y cargar datos de prueba
 	s := storage.New()
 	s.Seed()
 
-	// Instanciar handlers con el store compartido
+	//  handlers y conectar con el storage
 	mh  := handlers.NewMaterialHandler(s)
 	mob := handlers.NewManoObraHandler(s)
 	eh  := handlers.NewEquipoHandler(s)
@@ -31,35 +30,31 @@ func main() {
 
 	r.Route("/api/v1/catalogo", func(r chi.Router) {
 
-		// JWT requerido en todos los endpoints del catálogo
-		r.Use(middleware.AuthJWT)
-
 		// material (/api/v1/catalogo/material)
-		r.Get("/material", mh.Lista)
-		r.Get("/material/{id}", mh.ObtenerUnMaterial)
-		r.Post("/material", mh.CrearUnMaterial)    // valida nombre, unidad y precio>0, unicidad nombre+unidad
+		r.Get("/material", mh.ListandoMateriales) //esto se conecta con el storage
+		r.Get("/material/{id}", mh.ObtenerMaterialPorID)
+		r.Post("/material", mh.CreandoMaterial)    // valida nombre, unidad y precio>0, unicidad nombre+unidad
 		r.Put("/material/{id}", mh.ActulizarUnMaterial)
 		r.Delete("/material/{id}", mh.BorrarUnMaterial)
 
 		// mano de obra (/api/v1/catalogo/manoobra)
-		r.Get("/manoobra", mob.List)
-		r.Get("/manoobra/{id}", mob.GetByID)
-		r.Post("/manoobra", mob.Create)   // valida descripción, categoría en oficial/ayudante/especialista, unidad en hora/día/jornal, costo > 0
-		r.Put("/manoobra/{id}", mob.Replace)
-		r.Delete("/manoobra/{id}", mob.Delete)
+		r.Get("/manoobra", mob.ListarUnaManoObra)
+		r.Get("/manoobra/{id}", mob.ObtenerUnaManoObraPorID)
+		r.Post("/manoobra", mob.CreandoUnaManoObra)   // valida descripción, categoría en oficial/ayudante/especialista, unidad en hora/día/jornal, costo > 0
+		r.Put("/manoobra/{id}", mob. ActualizadoUnaManoObra)
+		r.Delete("/manoobra/{id}", mob.BorrandoUnaManoObra)
 
 		// equipo (/api/v1/catalogo/equipo)
-		r.Get("/equipo", eh.ListaUnEquipo)
-		r.Get("/equipo/{id}", eh.ObtenerporUnIDEquipo)
+		r.Get("/equipo", eh.ListandoLosEquipos)
+		r.Get("/equipo/{id}", eh.ObtenerUnEquipoPorID)
 		r.Post("/equipo", eh.CrearUnEquipo)
 		r.Put("/equipo/{id}", eh.ActualizarUnEquipo)
-		r.Patch("/equipo/{id}/disponibilidad", eh.PatchDisponibilidad)
 		r.Delete("/equipo/{id}", eh.BorrarUnEquipo)
 
 		// precios (/api/v1/catalogo/precio)
-		r.Post("/precio", ph.Create)
-		r.Get("/precio/{tipo}/{id}", ph.Historial)         // historial completo de un recurso
-		r.Get("/precio/{tipo}/{id}/vigente", ph.Vigente)   // precio más reciente con fecha_vigencia ≤ hoy
+		r.Get("/precio", ph.ListarDeLosPrecios)
+		r.Post("/precio", ph.	CrearUnPrecio)
+		r.Get("/precio/{id}", ph.ObtenerUnPrecioPorID)
 	})
 
 	log.Println("Servidor escuchando en http://localhost:8080")
