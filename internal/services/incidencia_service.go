@@ -6,27 +6,6 @@ import (
 	"errors"
 )
 
-func CrearObra(obra models.Obra) (models.Obra, error) {
-	if obra.Nombre == "" {
-		return obra, errors.New("el nombre de la obra es obligatorio")
-	}
-	if obra.UserID <= 0 {
-		return obra, errors.New("el user_id es obligatorio")
-	}
-
-	// Asignar ID automático
-	obra.ID = storage.ObraIDCounter
-	storage.ObraIDCounter++
-
-	// Valor por defecto de estado
-	if obra.Estado == "" {
-		obra.Estado = "planificacion"
-	}
-
-	storage.Obras = append(storage.Obras, obra)
-	return obra, nil
-}
-
 func CrearIncidencia(incidencia models.Incidencia) (models.Incidencia, error) {
 	if incidencia.Titulo == "" {
 		return incidencia, errors.New("el titulo es obligatorio")
@@ -46,10 +25,6 @@ func CrearIncidencia(incidencia models.Incidencia) (models.Incidencia, error) {
 
 	storage.Incidencias = append(storage.Incidencias, incidencia)
 	return incidencia, nil
-}
-
-func ObtenerTodasObras() []models.Obra {
-	return storage.Obras
 }
 
 func ObtenerIncidencias() []models.Incidencia {
