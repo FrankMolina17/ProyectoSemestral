@@ -79,7 +79,9 @@ type MaterialHandler struct{
 	 s *storage.Storage 
 }
 
-func NewMaterialHandler(s *storage.Storage) *MaterialHandler { return &MaterialHandler{s} }
+func NewMaterialHandler(s *storage.Storage) *MaterialHandler { 
+	return &MaterialHandler{s} 
+}
 
 // GET /material  →  200
 func (h *MaterialHandler) ListandoMateriales(w http.ResponseWriter, r *http.Request) {
