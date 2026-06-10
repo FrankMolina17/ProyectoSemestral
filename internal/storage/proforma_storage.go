@@ -145,3 +145,17 @@ func (s *ProformaStorage) recalcularTotales(proformaID int) {
     p.Total = subtotal + (subtotal * p.PctGanancia) + (subtotal * p.PctImprevisto)
     s.proformas[proformaID] = p
 }
+
+func (s *ProformaStorage) AprobarProforma(id int) (models.Proforma, error) {
+    s.mu.Lock()
+    defer s.mu.Unlock()
+
+    p, ok := s.proformas[id]
+    if !ok {
+        return models.Proforma{}, errors.New("proforma no encontrada")
+    }
+
+    p.Estado = "aprobada"
+    s.proformas[id] = p
+    return p, nil
+}

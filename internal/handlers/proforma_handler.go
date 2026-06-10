@@ -203,3 +203,39 @@ func (h *ProformaHandler) ObtenerItems(w http.ResponseWriter, r *http.Request) {
     items := h.storage.ObtenerItems(id)
     responderJSON(w, http.StatusOK, items)
 }
+
+func (h *ProformaHandler) AprobarProforma(w http.ResponseWriter, r *http.Request) {
+    idStr := chi.URLParam(r, "id")
+    id, err := strconv.Atoi(idStr)
+    if err != nil {
+        responderJSON(w, http.StatusBadRequest, map[string]string{
+            "error": "id inválido",
+        })
+        return
+    }
+
+    p, err := h.storage.ObtenerPorID(id)
+    if err != nil {
+        responderJSON(w, http.StatusNotFound, map[string]string{
+            "error": "proforma no encontrada",
+        })
+        return
+    }
+
+    if p.Estado == "aprobada" {
+        responderJSON(w, http.StatusBadRequest, map[string]string{
+            "error": "la proforma ya está aprobada",
+        })
+        return
+    }
+
+    aprobada, err := h.storage.AprobarProforma(id)
+    if err != nil {
+        responderJSON(w, http.StatusNotFound, map[string]string{
+            "error": "proforma no encontrada",
+        })
+        return
+    }
+
+    responderJSON(w, http.StatusOK, aprobada)
+}
