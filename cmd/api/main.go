@@ -53,8 +53,12 @@ func main() {
 
 		// precios (/api/v1/catalogo/precio)
 		r.Get("/precio", ph.ListarDeLosPrecios)
-		r.Post("/precio", ph.	CrearUnPrecio)
+		r.Post("/precio", ph.CrearUnPrecio)
+		r.Get("/precio/{tipo}/{recursoID}/vigente", ph.PrecioVigentePorRecurso)
+		r.Get("/precio/{tipo}/{recursoID}", ph.HistorialPorRecurso)
 		r.Get("/precio/{id}", ph.ObtenerUnPrecioPorID)
+		r.Put("/precio/{id}", ph.ActualizarUnPrecio)
+		r.Delete("/precio/{id}", ph.BorrarUnPrecio)
 	})
 
 	log.Println("Servidor escuchando en http://localhost:8080")
