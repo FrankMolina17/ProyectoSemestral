@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
+
 	"github.com/shopspring/decimal"
 )
 
@@ -17,7 +18,7 @@ var (
 
 type Storage struct {
 	mu         sync.RWMutex // R para lectura y W para escritura
-	seq        int 
+	seq        int
 	materiales map[int]*models.Material
 	manoObras  map[int]*models.ManoObra
 	equipos    map[int]*models.Equipo
@@ -122,7 +123,7 @@ func (s *Storage) ListarManoObra() []*models.ManoObra {
 	return list
 }
 
-func (s *Storage) ObtenerManoObra(id int) (*models.ManoObra, error) { 
+func (s *Storage) ObtenerManoObra(id int) (*models.ManoObra, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	m, ok := s.manoObras[id]
@@ -264,9 +265,69 @@ func (s *Storage) ObtenerPrecio(id int) (*models.PrecioRecurso, error) {
 	return p, nil
 }
 
+func (s *Storage) existeRecurso(tipo string, id int) error {
+	switch tipo {
+	case "material":
+		if _, ok := s.materiales[id]; !ok {
+			return ErrNotFound
+		}
+	case "mano_obra":
+		if _, ok := s.manoObras[id]; !ok {
+			return ErrNotFound
+		}
+	case "equipo":
+		if _, ok := s.equipos[id]; !ok {
+			return ErrNotFound
+		}
+	default:
+		return ErrNotFound
+	}
+	return nil
+}
+
+func (s *Storage) HistorialPrecios(tipo string, recursoID int) []*models.PrecioRecurso {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	list := make([]*models.PrecioRecurso, 0)
+	for _, p := range s.precios {
+		if p.RecursoTipo == tipo && p.RecursoID == recursoID {
+			list = append(list, p)
+		}
+	}
+	sort.Slice(list, func(i, j int) bool {
+		return list[i].FechaVigencia.Before(list[j].FechaVigencia)
+	})
+	return list
+}
+
+func (s *Storage) PrecioVigente(tipo string, recursoID int) (*models.PrecioRecurso, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	now := time.Now().UTC()
+	var vigente *models.PrecioRecurso
+	for _, p := range s.precios {
+		if p.RecursoTipo != tipo || p.RecursoID != recursoID {
+			continue
+		}
+		if p.FechaVigencia.After(now) {
+			continue
+		}
+		if vigente == nil || p.FechaVigencia.After(vigente.FechaVigencia) {
+			vigente = p
+		}
+	}
+	if vigente == nil {
+		return nil, ErrNotFound
+	}
+	return vigente, nil
+}
+
 func (s *Storage) CrearPrecio(in models.EntradaPrecioRecurso) (*models.PrecioRecurso, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if err := s.existeRecurso(in.RecursoTipo, in.RecursoID); err != nil {
+		return nil, err
+	}
 	pr := &models.PrecioRecurso{
 		ID:            s.nextID(),
 		RecursoTipo:   in.RecursoTipo,
@@ -277,6 +338,28 @@ func (s *Storage) CrearPrecio(in models.EntradaPrecioRecurso) (*models.PrecioRec
 	}
 	s.precios[pr.ID] = pr
 	return pr, nil
+}
+
+func (s *Storage) ActualizarPrecio(id int, in models.EntradaPrecioRecurso) (*models.PrecioRecurso, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	p, ok := s.precios[id]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	p.Precio = in.Precio
+	p.FechaVigencia = in.FechaVigencia.UTC()
+	return p, nil
+}
+
+func (s *Storage) EliminarPrecio(id int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, ok := s.precios[id]; !ok {
+		return ErrNotFound
+	}
+	delete(s.precios, id)
+	return nil
 }
 
 // ─────────────────────────────────────────────
@@ -360,8 +443,57 @@ func (s *Storage) Seed() {
 		id := s.nextID()
 		s.equipos[id] = &models.Equipo{
 			ID: id, Nombre: e.nombre, Tipo: e.tipo, Unidad: e.unidad,
-			CostoHora: decimal.RequireFromString(e.costoHora),
+			CostoHora:  decimal.RequireFromString(e.costoHora),
 			Disponible: e.disponible, CreatedAt: now,
+		}
+	}
+
+	hace30 := now.AddDate(0, -1, 0)
+	hace60 := now.AddDate(0, -2, 0)
+
+	type precioSeed struct {
+		tipo   string
+		id     int
+		precio string
+		fecha  time.Time
+	}
+
+	precios := []precioSeed{
+		{"material", 1, "8.80", hace60},
+		{"material", 1, "9.20", hace30},
+		{"material", 1, "9.50", now},
+		{"material", 2, "20.00", hace60},
+		{"material", 2, "21.00", hace30},
+		{"material", 2, "22.00", now},
+		{"material", 4, "1.05", hace60},
+		{"material", 4, "1.10", hace30},
+		{"material", 4, "1.15", now},
+		{"mano_obra", 16, "32.00", hace60},
+		{"mano_obra", 16, "33.50", hace30},
+		{"mano_obra", 16, "35.00", now},
+		{"mano_obra", 17, "25.00", hace60},
+		{"mano_obra", 17, "26.50", hace30},
+		{"mano_obra", 17, "28.00", now},
+		{"equipo", 34, "78.00", hace60},
+		{"equipo", 34, "82.00", hace30},
+		{"equipo", 34, "85.00", now},
+		{"equipo", 35, "60.00", hace60},
+		{"equipo", 35, "62.50", hace30},
+		{"equipo", 35, "65.00", now},
+	}
+
+	for _, p := range precios {
+		if err := s.existeRecurso(p.tipo, p.id); err != nil {
+			continue
+		}
+		id := s.nextID()
+		s.precios[id] = &models.PrecioRecurso{
+			ID:            id,
+			RecursoTipo:   p.tipo,
+			RecursoID:     p.id,
+			Precio:        decimal.RequireFromString(p.precio),
+			FechaVigencia: p.fecha,
+			CreatedAt:     p.fecha,
 		}
 	}
 }
