@@ -31,7 +31,7 @@ r.Route("/api/v1", func(r chi.Router) {
 
 
 })
-	const addr = ":3000"
+	const addr = ":3000" //http://localhost:3000
 	log.Printf("API escuchando en %s", addr)
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatal(err)

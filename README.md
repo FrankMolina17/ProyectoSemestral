@@ -13,7 +13,7 @@ Permite mantener recursos organizados y actualizados para los cálculos de presu
 **Proyecto:** Sistema de Gestión y Control de Obras  
 **Curso:** TDI-601 Aplicaciones Web II · 2026-1 · Paralelo B  
 **Integrante:** Franklin Vicente Molina Ponce  
-**Puerto:** `8082`
+**Puerto:** `3000`
 
 ---
 
