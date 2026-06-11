@@ -17,7 +17,7 @@ func CrearObraHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Datos inválidos", http.StatusBadRequest)
 		return
 	}
-	nueva, err := services.CrearObra(obra)
+	nueva, err := services.CrearObraServicio(obra)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

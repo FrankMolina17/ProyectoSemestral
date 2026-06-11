@@ -18,5 +18,6 @@ func RegisterRoutes(r chi.Router) {
 		r.Get("/{id}", handlers.ObtenerIncidenciaPorIDHandler)
 		r.Get("/por/{tipo}/{id}", handlers.ObtenerIncidenciasPorEntidadHandler)
 		r.Put("/{id}", handlers.ActualizarIncidenciaHandler)
+		r.Delete("/{id}", handlers.EliminarIncidenciaHandler)
 	})
 }
