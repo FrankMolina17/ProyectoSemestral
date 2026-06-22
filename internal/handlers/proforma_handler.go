@@ -239,3 +239,118 @@ func (h *ProformaHandler) AprobarProforma(w http.ResponseWriter, r *http.Request
 
     responderJSON(w, http.StatusOK, aprobada)
 }
+
+
+// ── CLIENTES ──
+
+func (h *ProformaHandler) CrearCliente(w http.ResponseWriter, r *http.Request) {
+	var c models.Cliente
+
+	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "cuerpo del request inválido",
+		})
+		return
+	}
+
+	if c.Nombre == "" {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "el campo nombre es requerido",
+		})
+		return
+	}
+	if c.Ruc == "" {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "el campo ruc es requerido",
+		})
+		return
+	}
+
+	creado := h.storage.CrearCliente(c)
+	responderJSON(w, http.StatusCreated, creado)
+}
+
+func (h *ProformaHandler) ObtenerClientes(w http.ResponseWriter, r *http.Request) {
+	lista := h.storage.ObtenerClientes()
+	responderJSON(w, http.StatusOK, lista)
+}
+
+func (h *ProformaHandler) ObtenerClientePorID(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "id inválido",
+		})
+		return
+	}
+
+	c, err := h.storage.ObtenerClientePorID(id)
+	if err != nil {
+		responderJSON(w, http.StatusNotFound, map[string]string{
+			"error": "cliente no encontrado",
+		})
+		return
+	}
+
+	responderJSON(w, http.StatusOK, c)
+}
+
+func (h *ProformaHandler) ActualizarCliente(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "id inválido",
+		})
+		return
+	}
+
+	var datos models.Cliente
+	if err := json.NewDecoder(r.Body).Decode(&datos); err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "cuerpo del request inválido",
+		})
+		return
+	}
+
+	if datos.Nombre == "" {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "el campo nombre es requerido",
+		})
+		return
+	}
+
+	actualizado, err := h.storage.ActualizarCliente(id, datos)
+	if err != nil {
+		responderJSON(w, http.StatusNotFound, map[string]string{
+			"error": "cliente no encontrado",
+		})
+		return
+	}
+
+	responderJSON(w, http.StatusOK, actualizado)
+}
+
+func (h *ProformaHandler) EliminarCliente(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "id inválido",
+		})
+		return
+	}
+
+	if err := h.storage.EliminarCliente(id); err != nil {
+		responderJSON(w, http.StatusNotFound, map[string]string{
+			"error": "cliente no encontrado",
+		})
+		return
+	}
+
+	responderJSON(w, http.StatusOK, map[string]string{
+		"mensaje": "cliente eliminado correctamente",
+	})
+}
+
