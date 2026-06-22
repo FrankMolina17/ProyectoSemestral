@@ -354,3 +354,90 @@ func (h *ProformaHandler) EliminarCliente(w http.ResponseWriter, r *http.Request
 	})
 }
 
+
+
+//Resumen
+
+func (h *ProformaHandler) ObtenerResumen(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "id inválido",
+		})
+		return
+	}
+
+	p, err := h.storage.ObtenerPorID(id)
+	if err != nil {
+		responderJSON(w, http.StatusNotFound, map[string]string{
+			"error": "proforma no encontrada",
+		})
+		return
+	}
+
+	resumen := map[string]interface{}{
+		"proforma_id":    p.ID,
+		"nombre":         p.Nombre,
+		"estado":         p.Estado,
+		"subtotal":       p.Subtotal,
+		"ganancia":       p.Subtotal * p.PctGanancia,
+		"imprevisto":     p.Subtotal * p.PctImprevisto,
+		"total":          p.Total,
+		"pct_ganancia":   p.PctGanancia,
+		"pct_imprevisto": p.PctImprevisto,
+	}
+
+	responderJSON(w, http.StatusOK, resumen)
+}
+
+func (h *ProformaHandler) AgregarNota(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "id inválido",
+		})
+		return
+	}
+
+	var nota models.NotaProforma
+	if err := json.NewDecoder(r.Body).Decode(&nota); err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "cuerpo del request inválido",
+		})
+		return
+	}
+
+	if nota.Contenido == "" {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "el campo contenido es requerido",
+		})
+		return
+	}
+
+	nota.ProformaID = id
+	creada, err := h.storage.AgregarNota(nota)
+	if err != nil {
+		responderJSON(w, http.StatusNotFound, map[string]string{
+			"error": "proforma no encontrada",
+		})
+		return
+	}
+
+	responderJSON(w, http.StatusCreated, creada)
+}
+
+func (h *ProformaHandler) ObtenerNotas(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "id inválido",
+		})
+		return
+	}
+
+	notas := h.storage.ObtenerNotas(id)
+	responderJSON(w, http.StatusOK, notas)
+}
