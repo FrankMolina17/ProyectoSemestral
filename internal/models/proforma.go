@@ -33,3 +33,10 @@ type Cliente struct {
     Telefono string `json:"telefono"`
     Ruc      string `json:"ruc"`
 }
+
+type NotaProforma struct {
+    ID         int       `json:"id"`
+    ProformaID int       `json:"proforma_id"`
+    Contenido  string    `json:"contenido"`
+    CreadoEn   time.Time `json:"creado_en"`
+}
