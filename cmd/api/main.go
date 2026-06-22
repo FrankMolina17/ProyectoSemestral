@@ -28,7 +28,20 @@ r.Route("/api/v1", func(r chi.Router) {
 	r.Post("/proformas/{id}/items", proformaHandler.AgregarItem) // POST /api/v1/proformas/{id}/items — Agregar ítem
     r.Get("/proformas/{id}/items", proformaHandler.ObtenerItems) // GET /api/v1/proformas/{id}/items — Listar ítems
 	r.Put("/proformas/{id}/aprobar", proformaHandler.AprobarProforma) // PUT /api/v1/proformas/{id}/aprobar — Aprobar proforma
+	// Items
+	r.Post("/proformas/{id}/items", proformaHandler.AgregarItem)
+	r.Get("/proformas/{id}/items", proformaHandler.ObtenerItems)
+	r.Put("/proformas/{id}/aprobar", proformaHandler.AprobarProforma)
+	r.Get("/proformas/{id}/resumen", proformaHandler.ObtenerResumen)  // ← agregar
+	r.Post("/proformas/{id}/notas", proformaHandler.AgregarNota)      // ← agregar
+	r.Get("/proformas/{id}/notas", proformaHandler.ObtenerNotas)      // ← agregar
 
+	// Clientes
+	r.Post("/clientes", proformaHandler.CrearCliente)
+	r.Get("/clientes", proformaHandler.ObtenerClientes)
+	r.Get("/clientes/{id}", proformaHandler.ObtenerClientePorID)
+	r.Put("/clientes/{id}", proformaHandler.ActualizarCliente)
+	r.Delete("/clientes/{id}", proformaHandler.EliminarCliente)
 
 })
 	const addr = ":3000" //http://localhost:3000
