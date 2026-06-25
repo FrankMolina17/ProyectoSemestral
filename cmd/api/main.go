@@ -75,7 +75,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8082"
+		port = "3000"
 	}
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("M2 Proformas escuchando en http://localhost%s", addr)
