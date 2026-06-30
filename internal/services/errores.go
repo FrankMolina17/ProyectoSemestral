@@ -4,35 +4,32 @@ import (
 	"errors"
 
 	"encoding/json"
-	
+
 	"fmt"
 	"net/http"
 	"strconv"
 
-	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
+	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 )
 
 var (
-	ErrNombreVacio             = errors.New("el campo es obligatorio")
-	ErrUnidadVacia             = errors.New("el campo unidad es obligatorio")
-	ErrDescripcionVacia        = errors.New("el campo descripcion es obligatorio")
-	ErrUnidadNoPermitida       = errors.New("unidad no permitida")
+	ErrNombreVacio               = errors.New("el campo es obligatorio")
+	ErrUnidadVacia               = errors.New("el campo unidad es obligatorio")
+	ErrDescripcionVacia          = errors.New("el campo descripcion es obligatorio")
+	ErrUnidadNoPermitida         = errors.New("unidad no permitida")
 	ErrPrecioReferencialInvalido = errors.New("debe ser mayor a 0")
-	ErrNoEncontrado            = errors.New("registro no encontrado")
-	ErrPrecioNegativo          = errors.New("el precio no puede ser negativo")
-	ErrEmailEnUso              = errors.New("el correo electrónica ya se encuentra en uso")
-	ErrCredencialesInvalidas   = errors.New("Email o contraseña incorrectos")
-	ErrNotFound                = errors.New("recurso no encontrado")
-	ErrDuplicated              = errors.New("nombre ya existe para esa unidad")
-	ErrCategoriaNoPermitida    = errors.New("categoria no permitida")
-	ErrTipoVacio        = errors.New("el campo tipo es obligatorio")
-	ErrFechaVigenciaVacia = errors.New("el campo fecha vigencia es obligatorio")
-	
-
-		
+	ErrNoEncontrado              = errors.New("registro no encontrado")
+	ErrPrecioNegativo            = errors.New("el precio no puede ser negativo")
+	ErrEmailEnUso                = errors.New("el correo electrónica ya se encuentra en uso")
+	ErrCredencialesInvalidas     = errors.New("Email o contraseña incorrectos")
+	ErrNotFound                  = errors.New("recurso no encontrado")
+	ErrDuplicated                = errors.New("nombre ya existe para esa unidad")
+	ErrCategoriaNoPermitida      = errors.New("categoria no permitida")
+	ErrTipoVacio                 = errors.New("el campo tipo es obligatorio")
+	ErrFechaVigenciaVacia        = errors.New("el campo fecha vigencia es obligatorio")
 )
 
 func RepuestaJSON(w http.ResponseWriter, status int, payload any) {
@@ -48,10 +45,6 @@ func Ok(w http.ResponseWriter, data any) {
 func Creando(w http.ResponseWriter, data any, id int) {
 	RepuestaJSON(w, http.StatusCreated, map[string]any{"data": data, "id": id})
 }
-// su funcion es devolver un 201 en caso de exito
-func creando(w http.ResponseWriter, data any, id int) {
-	RepuestaJSON(w, http.StatusCreated, map[string]any{"data": data, "id": id})
-}
 
 // su funcion es devolver un 400
 func MalFormado(w http.ResponseWriter, msg string) {
@@ -63,6 +56,7 @@ func NoEncontrado(w http.ResponseWriter, recurso string, id int) {
 	RepuestaJSON(w, http.StatusNotFound,
 		map[string]string{"error": fmt.Sprintf("%s con id %d no encontrado", recurso, id)})
 }
+
 // su funcion es devolver un 500 en caso de error de servidor
 func ErrorMermoria(w http.ResponseWriter, err error, recurso string, id int) {
 	switch {
@@ -79,7 +73,7 @@ func ErrorMermoria(w http.ResponseWriter, err error, recurso string, id int) {
 
 // esto es para decodificar el json y mostrar el error
 func DecodificarJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
-	if err := json.NewDecoder(r.Body).Decode(dst); err != nil { 
+	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
 		MalFormado(w, "body malformado: "+err.Error())
 		return false
 	}
