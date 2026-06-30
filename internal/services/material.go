@@ -68,7 +68,8 @@ func ValidarM(in models.EntradaMaterial) error {
 	if !models.UnidadesPermitidas[in.Unidad] {
 		return ErrUnidadNoPermitida
 	}
-	if in.PrecioReferencia.LessThanOrEqual(decimal.Zero) {
+	precio, err := decimal.NewFromString(in.PrecioReferencia)
+	if err != nil || precio.LessThanOrEqual(decimal.Zero) {
 		return ErrPrecioReferencialInvalido
 	}
 	return nil
