@@ -35,3 +35,17 @@ func (r *UsuarioGORM) BuscarUsuarioPorEmail(email string) (models.Usuario, bool)
 	}
 	return u, true
 }
+
+func (r *UsuarioGORM) ListarUsuarios() []*models.Usuario {
+	var usuarios []*models.Usuario
+	r.db.Find(&usuarios)
+	return usuarios
+}
+
+func (r *UsuarioGORM) ObtenerUsuarioPorID(id int) (*models.Usuario, bool) {
+	var u models.Usuario
+	if err := r.db.First(&u, id).Error; err != nil {
+		return nil, false
+	}
+	return &u, true
+}
