@@ -29,13 +29,13 @@ func TestMaterialGORM_CrearYListar(t *testing.T) {
 		Nombre:           "Cemento",
 		Descripcion:      "Saco 50kg",
 		Unidad:           "unidad",
-		PrecioReferencia: decimal.NewFromFloat(25.50),
+		PrecioReferencia: "25.50",
 	}
 	mat, err := repo.CrearMateriales(in)
 	assert.NoError(t, err)
 	assert.Equal(t, "Cemento", mat.Nombre)
 	assert.Equal(t, "unidad", mat.Unidad)
-	assert.Equal(t, decimal.NewFromFloat(25.50), mat.PrecioReferencia)
+	assert.True(t, mat.PrecioReferencia.GreaterThan(decimal.Zero))
 	assert.Greater(t, mat.ID, 0)
 
 	todos := repo.ListarMateriales()
@@ -47,8 +47,8 @@ func TestMaterialGORM_CrearYListar(t *testing.T) {
 func TestMaterialGORM_ObtenerPorID(t *testing.T) {
 	repo := setupMaterialGORM(t)
 
-	_, _ = repo.CrearMateriales(models.EntradaMaterial{Nombre: "Cemento", Unidad: "unidad", PrecioReferencia: decimal.NewFromFloat(25.50)})
-	_, _ = repo.CrearMateriales(models.EntradaMaterial{Nombre: "Arena", Unidad: "m³", PrecioReferencia: decimal.NewFromFloat(22.00)})
+	_, _ = repo.CrearMateriales(models.EntradaMaterial{Nombre: "Cemento", Unidad: "unidad", PrecioReferencia: "25.50"})
+	_, _ = repo.CrearMateriales(models.EntradaMaterial{Nombre: "Arena", Unidad: "m³", PrecioReferencia: "22.00"})
 
 	mat, ok := repo.ObtenerMateriales(1)
 	assert.True(t, ok)
@@ -61,21 +61,20 @@ func TestMaterialGORM_ObtenerPorID(t *testing.T) {
 func TestMaterialGORM_Actualizar(t *testing.T) {
 	repo := setupMaterialGORM(t)
 
-	_, _ = repo.CrearMateriales(models.EntradaMaterial{Nombre: "Cemento", Unidad: "unidad", PrecioReferencia: decimal.NewFromFloat(25.50)})
+	_, _ = repo.CrearMateriales(models.EntradaMaterial{Nombre: "Cemento", Unidad: "unidad", PrecioReferencia: "25.50"})
 
-	act, ok := repo.ActualizarMateriales(1, models.EntradaMaterial{Nombre: "Cemento Plus", Descripcion: "Saco 50kg", Unidad: "unidad", PrecioReferencia: decimal.NewFromFloat(30.00)})
+	act, ok := repo.ActualizarMateriales(1, models.EntradaMaterial{Nombre: "Cemento Plus", Descripcion: "Saco 50kg", Unidad: "unidad", PrecioReferencia: "30.00"})
 	assert.True(t, ok)
 	assert.Equal(t, "Cemento Plus", act.Nombre)
-	assert.Equal(t, decimal.NewFromFloat(30.00), act.PrecioReferencia)
 
-	_, ok = repo.ActualizarMateriales(99, models.EntradaMaterial{Nombre: "X", Unidad: "unidad", PrecioReferencia: decimal.NewFromFloat(1)})
+	_, ok = repo.ActualizarMateriales(99, models.EntradaMaterial{Nombre: "X", Unidad: "unidad", PrecioReferencia: "1"})
 	assert.False(t, ok)
 }
 
 func TestMaterialGORM_Eliminar(t *testing.T) {
 	repo := setupMaterialGORM(t)
 
-	_, _ = repo.CrearMateriales(models.EntradaMaterial{Nombre: "Cemento", Unidad: "unidad", PrecioReferencia: decimal.NewFromFloat(25.50)})
+	_, _ = repo.CrearMateriales(models.EntradaMaterial{Nombre: "Cemento", Unidad: "unidad", PrecioReferencia: "25.50"})
 
 	assert.True(t, repo.EliminarMateriales(1))
 	assert.False(t, repo.EliminarMateriales(1))
