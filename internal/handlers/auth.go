@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 	"encoding/json"
 	"net/http"
 )
@@ -21,7 +22,7 @@ func (s *ServerC) RegistrarUser(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	RespondJSON(w, http.StatusOK, usuario)
+	RespondJSON(w, http.StatusCreated, map[string]any{"id": usuario.ID, "email": usuario.Email})
 }
 
 func (s *ServerC) LoginUser(w http.ResponseWriter, r *http.Request) {
@@ -42,4 +43,24 @@ func (s *ServerC) LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	RespondJSON(w, http.StatusOK, map[string]string{"token": token})
+}
+
+func (s *ServerC) ListarUsuarios(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	usuarios := s.Autenticacion.ListarUsuarios()
+	RespondJSON(w, http.StatusOK, map[string]any{"data": usuarios})
+}
+
+func (s *ServerC) ObtenerUsuarioPorID(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	id, valid := services.ParaObtenerelID(w, r)
+	if !valid {
+		return
+	}
+	usuario, ok := s.Autenticacion.ObtenerUsuarioPorID(id)
+	if !ok {
+		services.NoEncontrado(w, "usuario", id)
+		return
+	}
+	services.Ok(w, usuario)
 }
