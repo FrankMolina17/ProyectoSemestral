@@ -2,11 +2,9 @@ package storage
 
 import (
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
-	
 )
 
-
-type MaterialRepository interface{
+type MaterialRepository interface {
 	CrearMateriales(in models.EntradaMaterial) (*models.Material, error)
 	ObtenerMateriales(id int) (*models.Material, bool)
 	ListarMateriales() []*models.Material
@@ -14,7 +12,7 @@ type MaterialRepository interface{
 	EliminarMateriales(id int) bool
 }
 
-type ManoObraRepository interface{
+type ManoObraRepository interface {
 	CrearManoObra(in models.EntradaManoObra) (*models.ManoObra, error)
 	ObtenerManoObra(id int) (*models.ManoObra, bool)
 	ListarManoObra() []*models.ManoObra
@@ -22,7 +20,7 @@ type ManoObraRepository interface{
 	EliminarManoObra(id int) bool
 }
 
-type EquipoRepository interface{
+type EquipoRepository interface {
 	CrearEquipo(in models.EntradaEquipo) (*models.Equipo, error)
 	ObtenerEquipo(id int) (*models.Equipo, error)
 	ListarEquipos() []*models.Equipo
@@ -30,19 +28,20 @@ type EquipoRepository interface{
 	EliminarEquipo(id int) error
 }
 
-type PrecioRecursoRepository interface{
-	ListarPrecios() []*models.PrecioRecurso 
+type PrecioRecursoRepository interface {
+	ListarPrecios() []*models.PrecioRecurso
 	ObtenerPrecio(id int) (*models.PrecioRecurso, error)
 	CrearPrecio(in models.EntradaPrecioRecurso) (*models.PrecioRecurso, error)
 	HistorialPrecios(tipo string, recursoID int) []*models.PrecioRecurso
 	PrecioVigente(tipo string, recursoID int) (*models.PrecioRecurso, error)
-	ActualizarPrecio(id int, in models.EntradaPrecioRecurso) (*models.PrecioRecurso, error) 
-	ExisteRecurso(tipo string, id int) error 
-	EliminarPrecio(id int) error 
-	
+	ActualizarPrecio(id int, in models.EntradaPrecioRecurso) (*models.PrecioRecurso, error)
+	ExisteRecurso(tipo string, id int) error
+	EliminarPrecio(id int) error
 }
 
 type UsuarioRepository interface {
 	CrearUsuario(in models.EntradaUsuario) (*models.Usuario, error)
 	BuscarUsuarioPorEmail(email string) (models.Usuario, bool)
+	ListarUsuarios() []*models.Usuario
+	ObtenerUsuarioPorID(id int) (*models.Usuario, bool)
 }
