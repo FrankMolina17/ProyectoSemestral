@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 
 var secretJwt = []byte("secreto")
 
-//duracion del jwt
+// duracion del jwt
 const DuracionJWT = time.Hour * 24
 
 //Claims es el payload del JWT de un usuario.
@@ -35,14 +36,14 @@ func NuevaAutenticacionService(repo storage.UsuarioRepository) *AutenticacionSer
 	}
 }
 
-//registra un nuevo Usuario
+// registra un nuevo Usuario
 func (s *AutenticacionService) RegistrarUsuario(email, password string) (*models.Usuario, error) {
 	email = strings.TrimSpace(email)
 	if email == "" {
 		return nil, ErrNombreVacio
 	}
 	if len(password) < 6 {
-		return nil, ErrNombreVacio
+		return nil, errors.New("la contraseña debe tener al menos 6 caracteres")
 	}
 	if _, existe := s.repo.BuscarUsuarioPorEmail(email); existe {
 		return nil, ErrEmailEnUso
@@ -57,7 +58,7 @@ func (s *AutenticacionService) RegistrarUsuario(email, password string) (*models
 	})
 }
 
-//Login de un usuario
+// Login de un usuario
 func (s *AutenticacionService) Login(email, password string) (*models.Usuario, error) {
 	usuario, ok := s.repo.BuscarUsuarioPorEmail(email)
 	if !ok {
@@ -69,7 +70,13 @@ func (s *AutenticacionService) Login(email, password string) (*models.Usuario, e
 	return &usuario, nil
 }
 
-//generar token
+func (s *AutenticacionService) ListarUsuarios() []*models.Usuario {
+	return s.repo.ListarUsuarios()
+}
+
+func (s *AutenticacionService) ObtenerUsuarioPorID(id int) (*models.Usuario, bool) {
+	return s.repo.ObtenerUsuarioPorID(id)
+}
 
 func (s *AutenticacionService) GenerarJWT(usuario models.Usuario) (string, error) {
 	claims := Claims{
@@ -84,7 +91,7 @@ func (s *AutenticacionService) GenerarJWT(usuario models.Usuario) (string, error
 	return token.SignedString(secretJwt)
 }
 
-//validar Token
+// validar Token
 func (s *AutenticacionService) ValidarJWT(tokenStr string) (*Claims, error) {
 	tok, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (any, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
