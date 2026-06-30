@@ -1,8 +1,10 @@
 package storage
 
 import (
+	"errors"
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 
@@ -14,12 +16,27 @@ func NewMaterialGORM(db *gorm.DB) *MaterialGORM {
 	return &MaterialGORM{db: db}
 }
 
+func precioADecimal(precioStr string) (decimal.Decimal, error) {
+	if precioStr == "" {
+		return decimal.Zero, errors.New("precio vacio")
+	}
+	precio, err := decimal.NewFromString(precioStr)
+	if err != nil {
+		return decimal.Zero, err
+	}
+	return precio, nil
+}
+
 func (r *MaterialGORM) CrearMateriales(in models.EntradaMaterial) (*models.Material, error) {
+	precio, err := precioADecimal(in.PrecioReferencia)
+	if err != nil {
+		return nil, err
+	}
 	mat := models.Material{
 		Nombre:           in.Nombre,
 		Descripcion:      in.Descripcion,
 		Unidad:           in.Unidad,
-		PrecioReferencia: in.PrecioReferencia,
+		PrecioReferencia: precio,
 	}
 	if err := r.db.Create(&mat).Error; err != nil {
 		return nil, err
@@ -50,10 +67,14 @@ func (r *MaterialGORM) ActualizarMateriales(id int, in models.EntradaMaterial) (
 	if err := r.db.First(&mat, id).Error; err != nil {
 		return nil, false
 	}
+	precio, err := precioADecimal(in.PrecioReferencia)
+	if err != nil {
+		return nil, false
+	}
 	mat.Nombre = in.Nombre
 	mat.Descripcion = in.Descripcion
 	mat.Unidad = in.Unidad
-	mat.PrecioReferencia = in.PrecioReferencia
+	mat.PrecioReferencia = precio
 	if err := r.db.Save(&mat).Error; err != nil {
 		return nil, false
 	}
