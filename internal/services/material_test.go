@@ -5,7 +5,6 @@ import (
 
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 
-	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,7 +44,7 @@ func TestCrearMaterial_RechazaDatoInvalido_NoLlamaAlRepositorio(t *testing.T) {
 			models.EntradaMaterial{
 				Nombre:           "",
 				Unidad:           "unidad",
-				PrecioReferencia: decimal.NewFromFloat(10.0),
+				PrecioReferencia: "10.00",
 			},
 		},
 		{
@@ -53,7 +52,7 @@ func TestCrearMaterial_RechazaDatoInvalido_NoLlamaAlRepositorio(t *testing.T) {
 			models.EntradaMaterial{
 				Nombre:           "Cemento",
 				Unidad:           "km",
-				PrecioReferencia: decimal.NewFromFloat(10.0),
+				PrecioReferencia: "10.00",
 			},
 		},
 		{
@@ -61,7 +60,7 @@ func TestCrearMaterial_RechazaDatoInvalido_NoLlamaAlRepositorio(t *testing.T) {
 			models.EntradaMaterial{
 				Nombre:           "Cemento",
 				Unidad:           "unidad",
-				PrecioReferencia: decimal.Zero,
+				PrecioReferencia: "0",
 			},
 		},
 		{
@@ -69,7 +68,7 @@ func TestCrearMaterial_RechazaDatoInvalido_NoLlamaAlRepositorio(t *testing.T) {
 			models.EntradaMaterial{
 				Nombre:           "Cemento",
 				Unidad:           "unidad",
-				PrecioReferencia: decimal.NewFromFloat(-5.0),
+				PrecioReferencia: "-5.00",
 			},
 		},
 	}
@@ -96,7 +95,7 @@ func TestCrearMaterial_DatoValido_LlamaAlRepositorio(t *testing.T) {
 		Nombre:           "Cemento Portland",
 		Descripcion:      "Saco de 50kg",
 		Unidad:           "unidad",
-		PrecioReferencia: decimal.NewFromFloat(25.50),
+		PrecioReferencia: "25.50",
 	}
 
 	_, err := svc.CrearM(in)
