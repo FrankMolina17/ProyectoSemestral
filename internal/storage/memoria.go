@@ -1,4 +1,3 @@
-
 package storage
 
 import (
@@ -11,13 +10,13 @@ import (
 
 	"github.com/shopspring/decimal"
 )
+
 //esto es para manejar los errores
 
 var (
-	ErrNotFound   = errors.New("recurso no encontrado") //esto es para manejar los errores en caso de que el recurso no exista
+	ErrNotFound   = errors.New("recurso no encontrado")            //esto es para manejar los errores en caso de que el recurso no exista
 	ErrDuplicated = errors.New("nombre ya existe para esa unidad") //esto es para manejar los errores en caso de que el recurso ya exista
 )
-
 
 type Storage struct {
 	mu         sync.RWMutex
@@ -38,7 +37,8 @@ func New() *Storage {
 		usuarios:   make(map[int]*models.Usuario),
 	}
 }
-//Este metodo se encarga de darle un id unico
+
+// Este metodo se encarga de darle un id unico
 func (s *Storage) nextID() int {
 	s.seq++
 	return s.seq
@@ -60,7 +60,7 @@ func (s *Storage) ListarMateriales() []*models.Material {
 }
 
 func (s *Storage) ObtenerMateriales(id int) (*models.Material, bool) { //este metodo se encarga de obtener el recurso
-	s.mu.RLock() 
+	s.mu.RLock()
 	defer s.mu.RUnlock()
 	m, ok := s.materiales[id]
 	if !ok {
@@ -69,22 +69,24 @@ func (s *Storage) ObtenerMateriales(id int) (*models.Material, bool) { //este me
 	return m, true
 }
 
-
-func (s *Storage) CrearMateriales(in models.EntradaMaterial) (*models.Material, error) {  //este metodo se encarga de crear el recurso
+func (s *Storage) CrearMateriales(in models.EntradaMaterial) (*models.Material, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	for _, m := range s.materiales {
-		if m.Nombre == in.Nombre && m.Unidad == in.Unidad { //si el recurso ya existe
-			return nil, ErrDuplicated // se devuelve un error
+		if m.Nombre == in.Nombre && m.Unidad == in.Unidad {
+			return nil, ErrDuplicated
 		}
 	}
-	// Aquí se crea el recurso
+	precio, err := decimal.NewFromString(in.PrecioReferencia)
+	if err != nil {
+		return nil, err
+	}
 	mat := &models.Material{
 		ID:               s.nextID(),
 		Nombre:           in.Nombre,
 		Descripcion:      in.Descripcion,
 		Unidad:           in.Unidad,
-		PrecioReferencia: in.PrecioReferencia,
+		PrecioReferencia: precio,
 		CreatedAt:        time.Now().UTC(),
 	}
 	s.materiales[mat.ID] = mat
@@ -98,10 +100,14 @@ func (s *Storage) ActualizarMateriales(id int, in models.EntradaMaterial) (*mode
 	if !ok {
 		return nil, false
 	}
+	precio, err := decimal.NewFromString(in.PrecioReferencia)
+	if err != nil {
+		return nil, false
+	}
 	mat.Nombre = in.Nombre
 	mat.Descripcion = in.Descripcion
 	mat.Unidad = in.Unidad
-	mat.PrecioReferencia = in.PrecioReferencia
+	mat.PrecioReferencia = precio
 	return mat, true
 }
 
@@ -271,7 +277,8 @@ func (s *Storage) ObtenerPrecio(id int) (*models.PrecioRecurso, error) {
 	}
 	return p, nil
 }
-//existeRecurso es una función que se utiliza para verificar si un recurso existe en la base de datos.
+
+// existeRecurso es una función que se utiliza para verificar si un recurso existe en la base de datos.
 func (s *Storage) ExisteRecurso(tipo string, id int) error {
 	switch tipo {
 	case "material":
@@ -291,7 +298,8 @@ func (s *Storage) ExisteRecurso(tipo string, id int) error {
 	}
 	return nil
 }
-//HistorialPrecios es una función que se utiliza para obtener el historial de precios de un recurso.
+
+// HistorialPrecios es una función que se utiliza para obtener el historial de precios de un recurso.
 func (s *Storage) HistorialPrecios(tipo string, recursoID int) []*models.PrecioRecurso {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -306,7 +314,8 @@ func (s *Storage) HistorialPrecios(tipo string, recursoID int) []*models.PrecioR
 	})
 	return list
 }
-//PrecioVigente es una función que se utiliza para obtener el precio vigente de un recurso.
+
+// PrecioVigente es una función que se utiliza para obtener el precio vigente de un recurso.
 func (s *Storage) PrecioVigente(tipo string, recursoID int) (*models.PrecioRecurso, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -394,6 +403,28 @@ func (s *Storage) BuscarUsuarioPorEmail(email string) (models.Usuario, bool) {
 		}
 	}
 	return models.Usuario{}, false
+}
+
+func (s *Storage) ListarUsuarios() []*models.Usuario {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	list := make([]*models.Usuario, 0, len(s.usuarios))
+	for _, u := range s.usuarios {
+		list = append(list, u)
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].ID < list[j].ID })
+	return list
+}
+
+func (s *Storage) ObtenerUsuarioPorID(id int) (*models.Usuario, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, u := range s.usuarios {
+		if u.ID == id {
+			return u, true
+		}
+	}
+	return nil, false
 }
 
 // ─────────────────────────────────────────────
