@@ -65,7 +65,7 @@ func obtenerToken(t *testing.T, router http.Handler) string {
 	router.ServeHTTP(rec, req)
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var resp map[string]string
+	var resp map[string]string 
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
 	require.NotEmpty(t, resp["token"])
 	return resp["token"]

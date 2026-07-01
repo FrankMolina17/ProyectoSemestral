@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-)
+) 
 
 // TestProformaRepository_CrearYObtenerTodos usa GORM con sqlite :memory:
 // y verifica que crear una proforma se refleje al listar.
