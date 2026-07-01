@@ -11,18 +11,21 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+//esto es para manejar los errores
+
 var (
-	ErrNotFound   = errors.New("recurso no encontrado")
-	ErrDuplicated = errors.New("nombre ya existe para esa unidad")
+	ErrNotFound   = errors.New("recurso no encontrado")            //esto es para manejar los errores en caso de que el recurso no exista
+	ErrDuplicated = errors.New("nombre ya existe para esa unidad") //esto es para manejar los errores en caso de que el recurso ya exista
 )
 
 type Storage struct {
-	mu         sync.RWMutex // R para lectura y W para escritura
+	mu         sync.RWMutex
 	seq        int
 	materiales map[int]*models.Material
 	manoObras  map[int]*models.ManoObra
 	equipos    map[int]*models.Equipo
 	precios    map[int]*models.PrecioRecurso
+	usuarios   map[int]*models.Usuario
 }
 
 func New() *Storage {
@@ -31,9 +34,11 @@ func New() *Storage {
 		manoObras:  make(map[int]*models.ManoObra),
 		equipos:    make(map[int]*models.Equipo),
 		precios:    make(map[int]*models.PrecioRecurso),
+		usuarios:   make(map[int]*models.Usuario),
 	}
 }
 
+// Este metodo se encarga de darle un id unico
 func (s *Storage) nextID() int {
 	s.seq++
 	return s.seq
@@ -54,14 +59,14 @@ func (s *Storage) ListarMateriales() []*models.Material {
 	return list
 }
 
-func (s *Storage) ObtenerMateriales(id int) (*models.Material, error) {
+func (s *Storage) ObtenerMateriales(id int) (*models.Material, bool) { //este metodo se encarga de obtener el recurso
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	m, ok := s.materiales[id]
 	if !ok {
-		return nil, ErrNotFound
+		return nil, false
 	}
-	return m, nil
+	return m, true
 }
 
 func (s *Storage) CrearMateriales(in models.EntradaMaterial) (*models.Material, error) {
@@ -72,40 +77,48 @@ func (s *Storage) CrearMateriales(in models.EntradaMaterial) (*models.Material, 
 			return nil, ErrDuplicated
 		}
 	}
+	precio, err := decimal.NewFromString(in.PrecioReferencia)
+	if err != nil {
+		return nil, err
+	}
 	mat := &models.Material{
 		ID:               s.nextID(),
 		Nombre:           in.Nombre,
 		Descripcion:      in.Descripcion,
 		Unidad:           in.Unidad,
-		PrecioReferencia: in.PrecioReferencia,
+		PrecioReferencia: precio,
 		CreatedAt:        time.Now().UTC(),
 	}
 	s.materiales[mat.ID] = mat
 	return mat, nil
 }
 
-func (s *Storage) ActualizarMateriales(id int, in models.EntradaMaterial) (*models.Material, error) {
+func (s *Storage) ActualizarMateriales(id int, in models.EntradaMaterial) (*models.Material, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	mat, ok := s.materiales[id]
 	if !ok {
-		return nil, ErrNotFound
+		return nil, false
+	}
+	precio, err := decimal.NewFromString(in.PrecioReferencia)
+	if err != nil {
+		return nil, false
 	}
 	mat.Nombre = in.Nombre
 	mat.Descripcion = in.Descripcion
 	mat.Unidad = in.Unidad
-	mat.PrecioReferencia = in.PrecioReferencia
-	return mat, nil
+	mat.PrecioReferencia = precio
+	return mat, true
 }
 
-func (s *Storage) EliminarMateriales(id int) error {
+func (s *Storage) EliminarMateriales(id int) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.materiales[id]; !ok {
-		return ErrNotFound
+		return false
 	}
 	delete(s.materiales, id)
-	return nil
+	return true
 }
 
 // ─────────────────────────────────────────────
@@ -123,14 +136,14 @@ func (s *Storage) ListarManoObra() []*models.ManoObra {
 	return list
 }
 
-func (s *Storage) ObtenerManoObra(id int) (*models.ManoObra, error) {
+func (s *Storage) ObtenerManoObra(id int) (*models.ManoObra, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	m, ok := s.manoObras[id]
 	if !ok {
-		return nil, ErrNotFound
+		return nil, false
 	}
-	return m, nil
+	return m, true
 }
 
 func (s *Storage) CrearManoObra(in models.EntradaManoObra) (*models.ManoObra, error) {
@@ -148,28 +161,28 @@ func (s *Storage) CrearManoObra(in models.EntradaManoObra) (*models.ManoObra, er
 	return mo, nil
 }
 
-func (s *Storage) ActualizarManoObra(id int, in models.EntradaManoObra) (*models.ManoObra, error) {
+func (s *Storage) ActualizarManoObra(id int, in models.EntradaManoObra) (*models.ManoObra, bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	mo, ok := s.manoObras[id]
 	if !ok {
-		return nil, ErrNotFound
+		return nil, false
 	}
 	mo.Descripcion = in.Descripcion
 	mo.Categoria = in.Categoria
 	mo.Unidad = in.Unidad
 	mo.CostoReferencia = in.CostoReferencia
-	return mo, nil
+	return mo, true
 }
 
-func (s *Storage) EliminarManoObra(id int) error {
+func (s *Storage) EliminarManoObra(id int) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if _, ok := s.manoObras[id]; !ok {
-		return ErrNotFound
+		return false
 	}
 	delete(s.manoObras, id)
-	return nil
+	return true
 }
 
 // ─────────────────────────────────────────────
@@ -265,7 +278,8 @@ func (s *Storage) ObtenerPrecio(id int) (*models.PrecioRecurso, error) {
 	return p, nil
 }
 
-func (s *Storage) existeRecurso(tipo string, id int) error {
+// existeRecurso es una función que se utiliza para verificar si un recurso existe en la base de datos.
+func (s *Storage) ExisteRecurso(tipo string, id int) error {
 	switch tipo {
 	case "material":
 		if _, ok := s.materiales[id]; !ok {
@@ -285,6 +299,7 @@ func (s *Storage) existeRecurso(tipo string, id int) error {
 	return nil
 }
 
+// HistorialPrecios es una función que se utiliza para obtener el historial de precios de un recurso.
 func (s *Storage) HistorialPrecios(tipo string, recursoID int) []*models.PrecioRecurso {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -300,6 +315,7 @@ func (s *Storage) HistorialPrecios(tipo string, recursoID int) []*models.PrecioR
 	return list
 }
 
+// PrecioVigente es una función que se utiliza para obtener el precio vigente de un recurso.
 func (s *Storage) PrecioVigente(tipo string, recursoID int) (*models.PrecioRecurso, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -325,7 +341,7 @@ func (s *Storage) PrecioVigente(tipo string, recursoID int) (*models.PrecioRecur
 func (s *Storage) CrearPrecio(in models.EntradaPrecioRecurso) (*models.PrecioRecurso, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if err := s.existeRecurso(in.RecursoTipo, in.RecursoID); err != nil {
+	if err := s.ExisteRecurso(in.RecursoTipo, in.RecursoID); err != nil {
 		return nil, err
 	}
 	pr := &models.PrecioRecurso{
@@ -333,7 +349,7 @@ func (s *Storage) CrearPrecio(in models.EntradaPrecioRecurso) (*models.PrecioRec
 		RecursoTipo:   in.RecursoTipo,
 		RecursoID:     in.RecursoID,
 		Precio:        in.Precio,
-		FechaVigencia: in.FechaVigencia.UTC(),
+		FechaVigencia: in.FechaVigencia,
 		CreatedAt:     time.Now().UTC(),
 	}
 	s.precios[pr.ID] = pr
@@ -348,7 +364,6 @@ func (s *Storage) ActualizarPrecio(id int, in models.EntradaPrecioRecurso) (*mod
 		return nil, ErrNotFound
 	}
 	p.Precio = in.Precio
-	p.FechaVigencia = in.FechaVigencia.UTC()
 	return p, nil
 }
 
@@ -360,6 +375,56 @@ func (s *Storage) EliminarPrecio(id int) error {
 	}
 	delete(s.precios, id)
 	return nil
+}
+
+// ─────────────────────────────────────────────
+// USUARIOS
+// ─────────────────────────────────────────────
+
+func (s *Storage) CrearUsuario(in models.EntradaUsuario) (*models.Usuario, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	u := &models.Usuario{
+		ID:           s.nextID(),
+		Email:        in.Email,
+		PasswordHash: in.Password,
+		CreatedAt:    time.Now().UTC(),
+	}
+	s.usuarios[u.ID] = u
+	return u, nil
+}
+
+func (s *Storage) BuscarUsuarioPorEmail(email string) (models.Usuario, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, u := range s.usuarios {
+		if u.Email == email {
+			return *u, true
+		}
+	}
+	return models.Usuario{}, false
+}
+
+func (s *Storage) ListarUsuarios() []*models.Usuario {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	list := make([]*models.Usuario, 0, len(s.usuarios))
+	for _, u := range s.usuarios {
+		list = append(list, u)
+	}
+	sort.Slice(list, func(i, j int) bool { return list[i].ID < list[j].ID })
+	return list
+}
+
+func (s *Storage) ObtenerUsuarioPorID(id int) (*models.Usuario, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, u := range s.usuarios {
+		if u.ID == id {
+			return u, true
+		}
+	}
+	return nil, false
 }
 
 // ─────────────────────────────────────────────
@@ -483,7 +548,7 @@ func (s *Storage) Seed() {
 	}
 
 	for _, p := range precios {
-		if err := s.existeRecurso(p.tipo, p.id); err != nil {
+		if err := s.ExisteRecurso(p.tipo, p.id); err != nil {
 			continue
 		}
 		id := s.nextID()

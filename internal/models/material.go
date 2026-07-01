@@ -27,10 +27,10 @@ type EntradaMaterial struct {
 	Nombre           string          `json:"nombre"`
 	Descripcion      string          `json:"descripcion"`
 	Unidad           string          `json:"unidad"`
-	PrecioReferencia decimal.Decimal `json:"precio_referencia"`
+	PrecioReferencia string          `json:"precio_referencia"`
 }
 
-var unidadesPermitidas = map[string]bool{
+var UnidadesPermitidas = map[string]bool{
 	"m²": true, "m³": true, "kg": true, "ton": true,
 	"unidad": true, "jornal": true, "hora": true, "día": true,
 	"ml": true, "lt": true, "gl": true,
@@ -43,10 +43,11 @@ func (m EntradaMaterial) ValidarMaterial() error {
 	if m.Unidad == "" {
 		return errors.New("campo 'unidad' requerido")
 	}
-	if !unidadesPermitidas[m.Unidad] {
+	if !UnidadesPermitidas[m.Unidad] {
 		return errors.New("unidad no permitida")
 	}
-	if m.PrecioReferencia.LessThanOrEqual(decimal.Zero) {
+	precio, err := decimal.NewFromString(m.PrecioReferencia)
+	if err != nil || precio.LessThanOrEqual(decimal.Zero) {
 		return errors.New("precio_referencia debe ser mayor a 0")
 	}
 	return nil
@@ -71,11 +72,11 @@ type EntradaManoObra struct {
 	CostoReferencia decimal.Decimal `json:"costo_referencia"`
 }
 
-var categoriasPermitidas = map[string]bool{
+var CategoriasPermitidas = map[string]bool{
 	"oficial": true, "ayudante": true, "especialista": true,
 }
 
-var unidadesManoObra = map[string]bool{
+var UnidadesManoObra = map[string]bool{
 	"hora": true, "día": true, "jornal": true,
 }
 
@@ -83,10 +84,10 @@ func (m EntradaManoObra) ValidarManoObra() error {
 	if m.Descripcion == "" {
 		return errors.New("campo 'descripcion' requerido")
 	}
-	if !categoriasPermitidas[m.Categoria] {
+	if !CategoriasPermitidas[m.Categoria] {
 		return errors.New("categoria debe ser: oficial, ayudante, especialista")
 	}
-	if !unidadesManoObra[m.Unidad] {
+	if !UnidadesManoObra[m.Unidad] {
 		return errors.New("unidad debe ser: hora, día, jornal")
 	}
 	if m.CostoReferencia.LessThanOrEqual(decimal.Zero) {
@@ -117,7 +118,7 @@ type EntradaEquipo struct {
 	Disponible bool            `json:"disponible"`
 }
 
-var tiposEquipo = map[string]bool{
+var TiposEquipo = map[string]bool{
 	"pesado": true, "liviano": true,
 }
 
@@ -125,7 +126,7 @@ func (e EntradaEquipo) ValidarEquipo() error {
 	if e.Nombre == "" {
 		return errors.New("campo 'nombre' requerido")
 	}
-	if !tiposEquipo[e.Tipo] {
+	if !TiposEquipo[e.Tipo] {
 		return errors.New("tipo debe ser: pesado, liviano")
 	}
 	if e.Unidad == "" {
