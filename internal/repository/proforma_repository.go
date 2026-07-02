@@ -2,10 +2,12 @@ package repository
 
 import (
 	"errors"
+	"os"
 	"time"
 
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -36,7 +38,18 @@ type proformaGormRepo struct {
 }
 
 func NuevaConexion(dsn string) (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+	var db *gorm.DB
+	var err error
+
+	driver := os.Getenv("DB_DRIVER")
+
+	switch driver {
+	case "postgres":
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	default:
+		db, err = gorm.Open(sqlite.Open(dsn), &gorm.Config{})
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +127,7 @@ func (r *proformaGormRepo) EliminarProforma(id int) error {
 		return ErrProformaNoEncontrada
 	}
 	return nil
-} 
+}
 
 func (r *proformaGormRepo) AprobarProforma(id int) (models.Proforma, error) {
 	p, err := r.ObtenerPorID(id)
