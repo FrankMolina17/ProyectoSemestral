@@ -4,6 +4,6 @@
 .git
 .gitignore
 .DS_Store
-*.md
 Documento
 postman
+test.db

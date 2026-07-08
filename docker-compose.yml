@@ -13,7 +13,7 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
+  api: 
     build: .
     ports:
       - "3000:3000"
