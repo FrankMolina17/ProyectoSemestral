@@ -1,11 +1,17 @@
 package main
 
 import (
-	"net/http"
-
+	"context"
+	"errors"
 	"log"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"Sistem-Inte-Gestion-Control-Obras/internal/config"
 	"Sistem-Inte-Gestion-Control-Obras/internal/handlers"
+	"Sistem-Inte-Gestion-Control-Obras/internal/httpserver"
 	"Sistem-Inte-Gestion-Control-Obras/internal/middleware"
 	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
@@ -15,31 +21,47 @@ import (
 )
 
 func main() {
-	r := chi.NewRouter()
+	cfg := config.LoadConfig()
+	if err := run(cfg); err != nil {
+		log.Fatal(err)
+	}
+}
 
+func run(cfg config.Config) error {
+	recursos, err := storage.Inicializar(cfg.RutaDB, cfg.Backend, cfg.Driver, cfg.DSN)
+	if err != nil {
+		return err
+	}
+	log.Printf("Backend de almacenamiento activo: %s (ruta: %s)", recursos.BackendUsado, cfg.RutaDB)
+	defer func() {
+		if err := recursos.Cerrar(); err != nil {
+			log.Printf("Backend cerrado (%s): %v", recursos.BackendUsado, err)
+		}
+	}()
+
+	materialsvc := services.NewMaterialService(recursos.Almacen)
+	manoobraSvc := services.NewManoObraService(recursos.ManoObra)
+	equiposvc := services.NewEquipoService(recursos.Equipos)
+	preciosSvc := services.NewPreciosService(recursos.Precios)
+	authSvc := services.NuevaAutenticacionService(recursos.Usuarios, services.AuthOptions{
+		Secreto:  []byte(cfg.JWTSecreto),
+		Duracion: cfg.JWTDuracion,
+	})
+
+	serverC := handlers.NewServerC(manoobraSvc, materialsvc, equiposvc, preciosSvc, authSvc)
+
+	mh := handlers.NewMaterialHandler(materialsvc)
+	mob := handlers.NewManoObraHandler(manoobraSvc)
+	eh := handlers.NewEquipoHandler(equiposvc)
+	ph := handlers.NewPrecioHandler(preciosSvc)
+
+	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(" Sistem-Inte-Gestion-Control-Obras/internal/routes - Servidor funcionando correctamente"))
 	})
-
-	s := storage.New()
-	s.Seed()
-
-	mh := handlers.NewMaterialHandler(s)
-	mob := handlers.NewManoObraHandler(s)
-	eh := handlers.NewEquipoHandler(s)
-	ph := handlers.NewPrecioHandler(s)
-
-	authService := services.NuevaAutenticacionService(s)
-	serverC := handlers.NewServerC(
-		services.NewManoObraService(s),
-		services.NewMaterialService(s),
-		services.NewEquipoService(s),
-		services.NewPreciosService(s),
-		authService,
-	)
 
 	r.Post("/api/v1/usuarios/registrar", serverC.RegistrarUser)
 
@@ -49,7 +71,7 @@ func main() {
 	r.Post("/api/v1/usuarios/login", serverC.LoginUser)
 
 	r.Route("/api/v1/catalogo", func(r chi.Router) {
-		r.Use(middleware.AuthJWT(authService))
+		r.Use(middleware.AuthJWT(authSvc))
 
 		r.Get("/material", mh.ListandoMateriales)
 		r.Get("/material/{id}", mh.ObtenerMaterialPorID)
@@ -78,9 +100,41 @@ func main() {
 		r.Delete("/precio/{id}", ph.BorrarUnPrecio)
 	})
 
-	const addr = ":8080"
-	log.Printf("API escuchando en http://localhost%s", addr)
-	if err := http.ListenAndServe(addr, r); err != nil {
-		log.Fatal(err)
+	// 6. Servidor HTTP configurado por Options (puerto + timeouts desde config).
+	srv := httpserver.Nuevo(
+		r,
+		httpserver.ConPuerto(cfg.Puerto),
+		httpserver.ConReadTimeout(cfg.ReadTimeout),
+		httpserver.ConWriteTimeout(cfg.WriteTimeout),
+	)
+
+	// 7. Contexto que se cancela al recibir Ctrl+C o SIGTERM.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	// 8. Arrancar el servidor en una goroutine para no bloquear la espera de la senal.
+	errServidor := make(chan error, 1)
+	go func() {
+		log.Printf("Servidor escuchando en http://localhost%s", cfg.Puerto)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errServidor <- err
+		}
+	}()
+
+	// 9. Esperar: o el servidor falla, o llega la senal de apagado.
+	select {
+	case err := <-errServidor:
+		return err
+	case <-ctx.Done():
+		log.Println("Senal de apagado recibida, cerrando ordenadamente...")
 	}
+
+	// 10. Graceful shutdown: hasta 10s para terminar las requests en curso.
+	ctxApagado, cancelar := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelar()
+	if err := srv.Shutdown(ctxApagado); err != nil {
+		return err
+	}
+	log.Println("Servidor detenido limpiamente.")
+	return nil
 }
