@@ -11,4 +11,6 @@ var (
 	ErrTituloIncidenciaVacio      = errors.New("El titulo de la incidencia no puede estar vacio")
 	ErrDescripcionIncidenciaVacio = errors.New("La descripcion de la incidencia no puede estar vacia")
 	ErrEstadoIncidenciaVacio      = errors.New("El estado de la incidencia no puede estar vacio")
+	ErrNombreObraVacio            = errors.New("El nombre de la obra no puede estar vacio")
+	ErrUserIDRequerido            = errors.New("El user_id es requerido para crear una obra")
 )

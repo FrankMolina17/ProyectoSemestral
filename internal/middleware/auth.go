@@ -12,7 +12,7 @@ type claveContexto string
 const ClaveusuarioID claveContexto = "userID"
 
 // Middleware de autenticación basado en JWT.
-func Autenticacion(s services.AuthService) func(next http.Handler) http.Handler {
+func Autenticacion(s *services.AuthService) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			encabezado := r.Header.Get("Authorization")

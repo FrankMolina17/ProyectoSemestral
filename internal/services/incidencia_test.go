@@ -13,6 +13,11 @@ type mockIncidenciaRepository struct {
 	updateIncidencePassed     models.Incidencia
 }
 
+func (m *mockIncidenciaRepository) CrearIncidencia(c models.Incidencia) models.Incidencia {
+
+	return c
+}
+
 func (m *mockIncidenciaRepository) ListarIncidencias() []models.Incidencia {
 
 	return nil
@@ -26,11 +31,6 @@ func (m *mockIncidenciaRepository) BuscarIncidenciaPorID(id int) (models.Inciden
 func (m *mockIncidenciaRepository) BuscarIncidenciaPorEntidad(id int, tipo string) (models.Incidencia, bool) {
 
 	return models.Incidencia{}, false
-}
-
-func (m *mockIncidenciaRepository) CrearIncidencia(c models.Incidencia) models.Incidencia {
-
-	return c
 }
 
 func (m *mockIncidenciaRepository) ActualizarIncidencia(id int, c models.Incidencia) (models.Incidencia, bool) {
@@ -61,6 +61,7 @@ func TestIncidenciaService_ActualizarIncidencia_InvalidTitle(t *testing.T) {
 		Descripcion: "Aa",
 		Estado:      "Abierta",
 	}
+
 	idToUpdate := 99
 
 	_, err := service.ActualizarIncidencia(idToUpdate, invalidIncidencia)

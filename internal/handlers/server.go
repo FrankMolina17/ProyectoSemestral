@@ -4,13 +4,19 @@ import "Sistem-Inte-Gestion-Control-Obras/internal/services"
 
 type Server struct {
 	IncidenciaService *services.IncidenciaService
+	ObraService       *services.ObraService
 	Auth              *services.AuthService
 }
 
-func NewServer(incidencias *services.IncidenciaService,
-	auth *services.AuthService) *Server {
+type Deps struct {
+	IncidenciaService *services.IncidenciaService
+	ObraService       *services.ObraService
+	Auth              *services.AuthService
+}
+
+func NewServer(d Deps) *Server {
 	return &Server{
-		IncidenciaService: incidencias,
-		Auth:              auth,
+		IncidenciaService: d.IncidenciaService,
+		Auth:              d.Auth,
 	}
 }

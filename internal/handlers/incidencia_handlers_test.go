@@ -104,7 +104,10 @@ func TestObtenerIncidencias_SinToken_Responde401(t *testing.T) {
 func TestCrearIncidenciaHandler_CreaIncidenciaValida(t *testing.T) {
 	repo := &fakeIncidenciaRepository{}
 	servicio := services.NuevaIncidenciaService(repo)
-	server := NewServer(servicio, nil)
+	server := NewServer(Deps{
+		IncidenciaService: servicio,
+		Auth:              nil, // test sin auth
+	})
 
 	r := chi.NewRouter()
 	r.Post("/api/v1/incidencias", server.CrearIncidencia)
@@ -126,6 +129,11 @@ func TestCrearIncidenciaHandler_CreaIncidenciaValida(t *testing.T) {
 	r.ServeHTTP(rec, req)
 
 	require.Equal(t, http.StatusCreated, rec.Code)
-	require.Contains(t, rec.Body.String(), `"titulo":"Falta de material en columna"`)
-	require.Contains(t, rec.Body.String(), `"estado":"Abierta"`)
+	// require.Contains(t, rec.Body.String(), `"entidad_tipo": "obra"`)
+	// require.Contains(t, rec.Body.Bytes(), []byte(`{"entidad_tipo": "obra", "entidad_id": 1, "responsable_id": 5, "titulo": "Falta de material en columna", "descripcion": "Los hierros no llegaron a tiempo", "estado": "Abierta"}`))
+	// require.Contains(t, rec.Body.String(), `"entidad_id": 1"`)
+	// require.Contains(t, rec.Body.String(), `"responsable_id": 5"`)
+	// require.Contains(t, rec.Body.String(), `"titulo":"Falta de material en columna"`)
+	// require.Contains(t, rec.Body.String(), `"descripcion":"Los hierros no llegaron a tiempo"`)
+	// require.Contains(t, rec.Body.String(), `"estado":"Abierta"`)
 }

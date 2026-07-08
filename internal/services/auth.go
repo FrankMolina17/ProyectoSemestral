@@ -14,18 +14,51 @@ var secretoJWT = []byte("Lulita-2024")
 
 var duracioToken = time.Hour * 24
 
+const (
+	secretoPorDefecto  = "incidencias-uleam-secreto-dev"
+	duracionPorDefecto = 24 * time.Hour
+)
+
 type Claims struct {
 	UsuarioID int `json:"uid"`
 	jwt.RegisteredClaims
 }
 
 type AuthService struct {
-	repo storage.UserRepository
+	repo     storage.UserRepository
+	secreto  []byte
+	duracion time.Duration
 }
 
-func NuevoAuthService(repo storage.UserRepository) *AuthService {
-	return &AuthService{repo: repo}
+func NuevoAuthService(repo storage.UserRepository, opts ...AuthOption) *AuthService {
+	s := &AuthService{
+		repo:     repo,
+		secreto:  []byte(secretoPorDefecto),
+		duracion: duracionPorDefecto,
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
+}
 
+// AuthOption configura el AuthService
+type AuthOption func(*AuthService)
+
+func WithSecreto(secreto []byte) AuthOption {
+	return func(a *AuthService) {
+		if len(secreto) > 0 {
+			a.secreto = secreto
+		}
+	}
+}
+
+func WithDuracionToken(d time.Duration) AuthOption {
+	return func(a *AuthService) {
+		if d > 0 {
+			a.duracion = d
+		}
+	}
 }
 
 func (s *AuthService) Registrar(email, password string) (models.Usuario, error) {

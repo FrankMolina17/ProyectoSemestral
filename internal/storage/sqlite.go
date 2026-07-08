@@ -67,5 +67,54 @@ func (a *AlmacenSQLite) BorrarIncidencia(id int) bool {
 	return res.RowsAffected > 0
 }
 
+func (a *AlmacenSQLite) ListarObras() []models.Obra {
+	var obras []models.Obra
+	a.db.Find(&obras)
+	return obras
+}
+
+func (a *AlmacenSQLite) BuscarObraPorID(id int) (models.Obra, bool) {
+	var o models.Obra
+	if err := a.db.First(&o, id).Error; err != nil {
+		return models.Obra{}, false
+	}
+	return o, true
+}
+
+func (a *AlmacenSQLite) CrearObra(o models.Obra) models.Obra {
+	a.db.Create(&o)
+	return o
+}
+
+func (a *AlmacenSQLite) ActualizarObra(id int, datos models.Obra) (models.Obra, bool) {
+	var existente models.Obra
+	if err := a.db.First(&existente, id).Error; err != nil {
+		return models.Obra{}, false
+	}
+	datos.ID = id
+	a.db.Save(&datos)
+	return datos, true
+}
+
+func (a *AlmacenSQLite) BorrarObra(id int) bool {
+	res := a.db.Delete(&models.Obra{}, id)
+	return res.RowsAffected > 0
+}
+
+func (a *AlmacenSQLite) BuscarUsuarioPorEmail(email string) (models.Usuario, bool) {
+	var u models.Usuario
+
+	if err := a.db.First(&u, email).Error; err != nil {
+		return models.Usuario{}, false
+	}
+
+	return u, true
+}
+
+func (a *AlmacenSQLite) CrearUsuario(u models.Usuario) (models.Usuario, error) {
+	a.db.Create(&u)
+	return u, nil
+}
+
 // Chequeo en tiempo de compilación: AlmacenSQLite debe cumplir Almacen.
 var _ Almacen = (*AlmacenSQLite)(nil)

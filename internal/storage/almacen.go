@@ -11,6 +11,14 @@ type IncidenciaRepository interface {
 	BorrarIncidencia(id int) bool
 }
 
+type ObraRepository interface {
+	ListarObras() []models.Obra
+	BuscarObraPorID(id int) (models.Obra, bool)
+	CrearObra(o models.Obra) models.Obra
+	ActualizarObra(id int, datos models.Obra) (models.Obra, bool)
+	BorrarObra(id int) bool
+}
+
 type UserRepository interface {
 	CrearUsuario(u models.Usuario) (models.Usuario, error)
 	BuscarUsuarioPorEmail(email string) (models.Usuario, bool)
@@ -18,6 +26,8 @@ type UserRepository interface {
 
 type Almacen interface {
 	IncidenciaRepository
+	ObraRepository
+	UserRepository
 }
 
 // Chequeo en tiempo de compilación: si Memoria dejara de cumplir Almacen,
