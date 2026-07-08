@@ -149,6 +149,11 @@ func (s *Storage) ObtenerManoObra(id int) (*models.ManoObra, bool) {
 func (s *Storage) CrearManoObra(in models.EntradaManoObra) (*models.ManoObra, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	for _, m := range s.manoObras {
+		if m.Descripcion == in.Descripcion && m.Categoria == in.Categoria && m.Unidad == in.Unidad {
+			return nil, ErrDuplicated
+		}
+	}
 	mo := &models.ManoObra{
 		ID:              s.nextID(),
 		Descripcion:     in.Descripcion,
