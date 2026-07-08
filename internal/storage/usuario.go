@@ -1,11 +1,10 @@
 package storage
 
 import (
+	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 	"time"
 
 	"gorm.io/gorm"
-
-	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 )
 
 type UsuarioGORM struct {
@@ -16,16 +15,12 @@ func NewUsuarioRepository(db *gorm.DB) *UsuarioGORM {
 	return &UsuarioGORM{db: db}
 }
 
-func (r *UsuarioGORM) CrearUsuario(in models.EntradaUsuario) (*models.Usuario, error) {
-	u := models.Usuario{
-		Email:        in.Email,
-		PasswordHash: in.Password,
-		CreatedAt:    time.Now(),
-	}
+func (r *UsuarioGORM) CrearUsuario(u models.Usuario) (models.Usuario, error) {
+	u.CreatedAt = time.Now()
 	if err := r.db.Create(&u).Error; err != nil {
-		return nil, err
+		return models.Usuario{}, err
 	}
-	return &u, nil
+	return u, nil
 }
 
 func (r *UsuarioGORM) BuscarUsuarioPorEmail(email string) (models.Usuario, bool) {
