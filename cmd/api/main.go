@@ -8,7 +8,6 @@ import (
 
 	"Sistem-Inte-Gestion-Control-Obras/internal/handlers"
 	"Sistem-Inte-Gestion-Control-Obras/internal/middleware"
-	"Sistem-Inte-Gestion-Control-Obras/internal/repository"
 	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
 
@@ -17,29 +16,26 @@ import (
 )
 
 func main() {
+	// Módulo 2 — Proformas (patrón Factory)
 	dsn := os.Getenv("DB_DSN")
 	if dsn == "" {
 		dsn = "proformas.db"
 	}
 
-	db, err := repository.NuevaConexion(dsn)
+	recursos, err := storage.InicializarModulo2(dsn)
 	if err != nil {
-		log.Fatalf("error conectando a SQLite: %v", err)
+		log.Fatalf("error inicializando módulo 2: %v", err)
 	}
+	defer recursos.Cerrar()
 
-	// ── Storage (auth sigue en memoria) ──
-	usuarioStore := storage.NuevoUsuarioStorage()
+	log.Printf("Módulo 2 usando backend: %s", recursos.BackendUsado)
 
-	// ── Repository + Services ──
-	proformaRepo := repository.NuevoProformaRepository(db)
-	proformaService := services.NuevoProformaService(proformaRepo)
-	authService := services.NuevoAuthService(usuarioStore)
+	proformaService := services.NuevoProformaService(recursos.ProformaRepo)
+	authService := services.NuevoAuthService(recursos.UsuarioStore)
 
-	// ── Handlers ──
 	proformaHandler := handlers.NuevoHandler(proformaService)
 	authHandler := handlers.NuevoAuthHandler(authService)
 
-	// ── Router ──
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
@@ -71,7 +67,6 @@ func main() {
 			r.Get("/proformas/{id}/resumen", proformaHandler.ObtenerResumen)
 			r.Post("/proformas/{id}/notas", proformaHandler.AgregarNota)
 			r.Get("/proformas/{id}/notas", proformaHandler.ObtenerNotas)
-
 			r.Post("/clientes", proformaHandler.CrearCliente)
 			r.Get("/clientes", proformaHandler.ObtenerClientes)
 			r.Get("/clientes/{id}", proformaHandler.ObtenerClientePorID)
@@ -82,7 +77,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000"
+		port = "8082"
 	}
 	addr := fmt.Sprintf(":%s", port)
 	log.Printf("M2 Proformas escuchando en http://localhost%s", addr)
