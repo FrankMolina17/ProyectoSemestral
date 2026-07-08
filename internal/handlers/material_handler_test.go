@@ -67,7 +67,7 @@ func TestListarMateriales_SinToken_Devuelve401(t *testing.T) {
 
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Equal(t, http.StatuteUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "No autorizado")
 }
 
@@ -79,7 +79,7 @@ func TestObtenerMaterialPorID_SinToken_Devuelve401(t *testing.T) {
 
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusTatusUnauthorized, w.Code)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "No autorizado")
 }
 
