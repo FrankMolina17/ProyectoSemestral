@@ -102,7 +102,7 @@ func TestObtenerIncidencias_SinToken_Responde401(t *testing.T) {
 }
 
 func TestCrearIncidenciaHandler_CreaIncidenciaValida(t *testing.T) {
-	repo := &fakeIncidenciaRepository{}
+
 	servicio := services.NuevaIncidenciaService(repo)
 	server := NewServer(Deps{
 		IncidenciaService: servicio,
