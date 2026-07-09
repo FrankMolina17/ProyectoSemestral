@@ -17,7 +17,7 @@ func (s *ServerC) RegistrarUser(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, "Datos invalidos "+err.Error())
 		return
 	}
-	usuario, err := s.Autenticacion.RegistrarUsuario(credenciales.Email, credenciales.Password)
+	proforma, err := s.Autenticacion.RegistrarUsuario(credenciales.Email, credenciales.Password)
 	if err != nil {
 		RespondError(w, StatusDeError(err), err.Error())
 		return
