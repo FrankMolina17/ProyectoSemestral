@@ -52,7 +52,7 @@ func TestListarManoObra_SinToken_Devuelve401(t *testing.T) {
 
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Equal(t, http.StatusTeapot, rec.Code) 
 	assert.Contains(t, w.Body.String(), "No autorizado")
 }
 
