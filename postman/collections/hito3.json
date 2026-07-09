@@ -1,0 +1,341 @@
+{
+  "info": {
+    "name": "Sistema Gestion Obras - HITO 3",
+    "description": "Colección para defender HITO 3. Incluye autenticación, catálogo, proformas, obras e incidencias.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Registrar usuario (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = JSON.parse(responseBody);",
+                  "pm.collectionVariables.set('token_admin', jsonData.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.com\",\n  \"password\": \"123456\",\n  \"rol\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/admin/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "admin", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = JSON.parse(responseBody);",
+                  "pm.collectionVariables.set('token_admin', jsonData.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@test.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Registrar (proforma)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = JSON.parse(responseBody);",
+                  "pm.collectionVariables.set('token_proforma', jsonData.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"cliente@test.com\",\n  \"password\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register-proforma",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register-proforma"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cátalogo (M1)",
+      "item": [
+        {
+          "name": "Crear material",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token_admin}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Cemento Portland\",\n  \"unidad\": \"bolsa\",\n  \"categoria\": \"material\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/catalogo/material",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "catalogo", "material"]
+            }
+          }
+        },
+        {
+          "name": "Listar materiales",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token_admin}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/catalogo/material",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "catalogo", "material"]
+            }
+          }
+        },
+        {
+          "name": "Crear mano de obra",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token_admin}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Albañil\",\n  \"unidad\": \"hora\",\n  \"categoria\": \"mano_obra\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/catalogo/manoobra",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "catalogo", "manoobra"]
+            }
+          }
+        },
+        {
+          "name": "Crear equipo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token_admin}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mezcladora\",\n  \"unidad\": \"día\",\n  \"categoria\": \"equipo\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/catalogo/equipo",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "catalogo", "equipo"]
+            }
+          }
+        },
+        {
+          "name": "Crear precio",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token_admin}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"entidad_tipo\": \"material\",\n  \"entidad_id\": 1,\n  \"valor\": 12.50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/catalogo/precio",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "catalogo", "precio"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Proformas (M2)",
+      "item": [
+        {
+          "name": "Crear proforma",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token_proforma}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Proforma Edificio Central\",\n  \"obra_id\": 1,\n  \"pct_ganancia\": 0.10,\n  \"pct_imprevisto\": 0.05\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/proformas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "proformas"]
+            }
+          }
+        },
+        {
+          "name": "Listar proformas",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token_proforma}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/proformas",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "proformas"]
+            }
+          }
+        },
+        {
+          "name": "Agregar item",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token_proforma}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"descripcion\": \"Cemento\",\n  \"tipo_recurso\": \"material\",\n  \"recurso_id\": 1,\n  \"cantidad\": 10,\n  \"precio_promedio\": 12.50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/proformas/1/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "proformas", "1", "items"]
+            }
+          }
+        },
+        {
+          "name": "Resumen proforma",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token_proforma}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/proformas/1/resumen",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "proformas", "1", "resumen"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Obras e Incidencias (M3)",
+      "item": [
+        {
+          "name": "Crear obra",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token_admin}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Edificio Central\",\n  \"direccion\": \"Av. Principal 123\",\n  \"estado\": \"planificacion\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/obras",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "obras"]
+            }
+          }
+        },
+        {
+          "name": "Listar obras",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token_admin}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/obras",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "obras"]
+            }
+          }
+        },
+        {
+          "name": "Crear incidencia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"},
+              {"key": "Authorization", "value": "Bearer {{token_admin}}"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"titulo\": \"Filtración en losa\",\n  \"descripcion\": \"Se detectó filtración en losa del 2do piso\",\n  \"entidad_tipo\": \"obra\",\n  \"entidad_id\": 1,\n  \"prioridad\": \"alta\",\n  \"estado\": \"abierta\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/incidencias",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "incidencias"]
+            }
+          }
+        },
+        {
+          "name": "Listar incidencias",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token_admin}}"}],
+            "url": {
+              "raw": "{{base_url}}/api/v1/incidencias",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "incidencias"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
