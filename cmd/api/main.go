@@ -16,6 +16,7 @@ import (
 )
 
 func main() {
+//<<<<<<< HEAD
 
 	// 1. Inicializar almacenamiento
 
@@ -48,6 +49,12 @@ func run(cfg config.Config) error {
 	})
 
 	// 4. Router
+//=======
+	r := chi.NewRouter()
+
+	r.Use(chimw.Logger)
+	r.Use(chimw.Recoverer)
+//>>>>>>> 9b502145c15fbc50b3c94f0c31d19a6aa799d624
 
 	cfg := config.Cargar()
 	if err := run(cfg); err != nil {
@@ -120,6 +127,7 @@ func run(cfg config.Config) error {
 		r.Delete("/precio/{id}", ph.BorrarUnPrecio)
 	})
 
+//<<<<<<< HEAD
 
 
 	// Modulo 3
@@ -211,4 +219,11 @@ func run(cfg config.Config) error {
 		log.Fatal(err)
 	}
 
+//=======
+	const addr = ":8080"
+	log.Printf("API escuchando en http://localhost%s", addr)
+	if err := http.ListenAndServe(addr, r); err != nil {
+		log.Fatal(err)
+	}
+//>>>>>>> 9b502145c15fbc50b3c94f0c31d19a6aa799d624
 }

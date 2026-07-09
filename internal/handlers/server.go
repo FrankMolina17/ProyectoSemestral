@@ -20,6 +20,7 @@ func NewServerC(manoObra *services.ManoObraServise, material *services.MaterialS
 		Precios: precios,
 		Autenticacion: autenticacion,
 	}
+<<<<<<< HEAD
 
 }
 
@@ -61,3 +62,6 @@ func NewServer (d Deps) *ServerC{
 		Autenticacion: d.Autenticacion,
 	}
 }
+//=======
+}
+//>>>>>>> 9b502145c15fbc50b3c94f0c31d19a6aa799d624
