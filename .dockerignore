@@ -1,0 +1,9 @@
+*.db
+*.db-shm
+*.db-wal
+.git
+.gitignore
+.DS_Store
+Documento
+postman
+test.db

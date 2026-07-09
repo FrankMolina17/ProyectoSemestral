@@ -9,7 +9,8 @@ type Usuario struct {
 	ID           int       `json:"id"`
 	Email        string    `json:"email" gorm:"not null;uniqueIndex"`
 	PasswordHash string    `json:"-" gorm:"not null"`
-	CreatedAt    time.Time `json:"-"`
+	CreatedAt    time.Time `json:"creado_en" gorm:"autoCreateTime"`
+	CreadoEn     time.Time `json:"-"` // por compatibilidad si es necesario
 }
 
 type EntradaUsuario struct {
