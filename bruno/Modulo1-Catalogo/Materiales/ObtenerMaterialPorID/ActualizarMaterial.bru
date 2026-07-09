@@ -1,0 +1,25 @@
+meta {
+  name: ActualizarMaterial
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{url}}/api/v1/catalogo/material/1
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "nombre": "Cemento Portland tipo IA",
+    "descripcion": "Saco de 50 kg para hormigón estructural",
+    "unidad": "unidad",
+    "precio_referencia": "9.5"
+  }
+}

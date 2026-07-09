@@ -1,0 +1,25 @@
+meta {
+  name: ActualizarPrecio
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{url}}/api/v1/catalogo/precio/1
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "recurso_tipo": "material",
+    "recurso_id": 4,
+    "precio": "3.50",
+    "fecha_vigencia": "2026-05-09T17:04:14.859169Z"
+  }
+}
