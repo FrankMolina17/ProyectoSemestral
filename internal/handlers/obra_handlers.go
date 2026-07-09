@@ -1,95 +1,86 @@
 package handlers
 
 import (
+	"Sistem-Inte-Gestion-Control-Obras/internal/models"
+	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
-
-	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 )
 
-// CrearObra atiende POST /api/v1/obras
-func (s *Server) CrearObra(w http.ResponseWriter, r *http.Request) {
+func CrearObraHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	var obra models.Obra
 	if err := json.NewDecoder(r.Body).Decode(&obra); err != nil {
-		RespondJSON(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+		http.Error(w, "Datos inválidos", http.StatusBadRequest)
 		return
 	}
-
-	nueva, err := s.ObraService.CrearObra(obra)
+	nueva, err := services.CrearObraServicio(obra)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	RespondJSON(w, http.StatusCreated, nueva)
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(nueva)
 }
 
-// ObtenerObras atiende GET /api/v1/obras
-func (s *Server) ObtenerObras(w http.ResponseWriter, r *http.Request) {
-	obras := s.ObraService.Listar()
-	RespondJSON(w, http.StatusOK, obras)
+func ObtenerObrasHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	obras := services.ObtenerObras()
+	json.NewEncoder(w).Encode(obras)
 }
 
-// ObtenerObraPorID atiende GET /api/v1/obras/{id}
-func (s *Server) ObtenerObraPorID(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+func ObtenerObraHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
-
-	obra, err := s.ObraService.Obtener(id)
-	if err != nil {
-		RespondError(w, http.StatusNotFound, "Obra no encontrada")
+	obra, encontrado := services.ObtenerObra(id)
+	if !encontrado {
+		http.Error(w, "Obra no encontrada", http.StatusNotFound)
 		return
 	}
-
-	RespondJSON(w, http.StatusOK, obra)
+	json.NewEncoder(w).Encode(obra)
 }
 
-// ActualizarObra atiende PUT /api/v1/obras/{id}
-func (s *Server) ActualizarObra(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+func ActualizarObraHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
-
-	var datos models.Obra
-	if err := json.NewDecoder(r.Body).Decode(&datos); err != nil {
-		RespondJSON(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+	var obra models.Obra
+	if err := json.NewDecoder(r.Body).Decode(&obra); err != nil {
+		http.Error(w, "Datos inválidos", http.StatusBadRequest)
 		return
 	}
-
-	if strings.TrimSpace(datos.Nombre) == "" {
-		RespondError(w, http.StatusBadRequest, "el campo nombre es obligatorio")
+	obra.ID = id
+	obraActualizada, actualizado := services.ActualizarObra(id, obra)
+	if !actualizado {
+		http.Error(w, "No se pudo actualizar la obra", http.StatusBadRequest)
 		return
 	}
-
-	actualizada, err := s.ObraService.ActualizarObra(id, datos)
-	if err != nil {
-		RespondError(w, http.StatusNotFound, "obra no encontrada")
-		return
-	}
-
-	RespondJSON(w, http.StatusOK, actualizada)
+	json.NewEncoder(w).Encode(obraActualizada)
 }
 
-// EliminarObra atiende DELETE /api/v1/obras/{id}
-func (s *Server) EliminarObra(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+func EliminarObraHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
-
-	if err := s.ObraService.BorrarObra(id); err != nil {
-		RespondError(w, http.StatusNotFound, err.Error())
+	if !services.EliminarObra(id) {
+		http.Error(w, "No se pudo eliminar la obra", http.StatusBadRequest)
 		return
 	}
-
-	RespondJSON(w, http.StatusNoContent, nil)
+	w.WriteHeader(http.StatusNoContent)
 }

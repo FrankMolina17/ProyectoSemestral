@@ -50,8 +50,4 @@ func Nuevo(handler http.Handler, opts ...Opcion) *http.Server {
 		opt(s)
 	}
 	return s
-<<<<<<< HEAD
-}
-=======
-}
->>>>>>> Modulo1/Catalogo
+

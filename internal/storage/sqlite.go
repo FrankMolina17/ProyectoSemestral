@@ -1,7 +1,7 @@
 package storage
 
 import (
-<<<<<<< HEAD
+//<<<<<<< HEAD
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 
 	"gorm.io/gorm"
@@ -119,7 +119,8 @@ func (a *AlmacenSQLite) CrearUsuario(u models.Usuario) (models.Usuario, error) {
 
 // Chequeo en tiempo de compilación: AlmacenSQLite debe cumplir Almacen.
 var _ Almacen = (*AlmacenSQLite)(nil)
-=======
+
+
 	"errors"
 	"time"
 
@@ -551,4 +552,4 @@ func (r *AlamcenSQlite) SembrarSiVacio() {
 
 	}
 }
->>>>>>> Modulo1/Catalogo
+//>>>>>> Modulo1/Catalogo

@@ -47,8 +47,8 @@ func conDuracion(clave string, porDefecto time.Duration) time.Duration {
 		return porDefecto
 	}
 	return d
-<<<<<<< HEAD
+//<<<<<<< HEAD
 }
-=======
-}
->>>>>>> Modulo1/Catalogo
+//=======
+
+//>>>>>>> Modulo1/Catalogo

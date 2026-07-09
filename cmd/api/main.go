@@ -1,17 +1,11 @@
 package main
 
 import (
-	"context"
-	"errors"
-	"log"
 	"net/http"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"Sistem-Inte-Gestion-Control-Obras/internal/config"
+	"log"
+
 	"Sistem-Inte-Gestion-Control-Obras/internal/handlers"
-	"Sistem-Inte-Gestion-Control-Obras/internal/httpserver"
 	"Sistem-Inte-Gestion-Control-Obras/internal/middleware"
 	"Sistem-Inte-Gestion-Control-Obras/internal/routes"
 	"Sistem-Inte-Gestion-Control-Obras/internal/services"
@@ -22,7 +16,7 @@ import (
 )
 
 func main() {
-<<<<<<< HEAD
+
 	// 1. Inicializar almacenamiento
 
 	cfg := config.Cargar()
@@ -54,7 +48,7 @@ func run(cfg config.Config) error {
 	})
 
 	// 4. Router
-=======
+
 	cfg := config.Cargar()
 	if err := run(cfg); err != nil {
 		log.Fatal(err)
@@ -80,11 +74,11 @@ func run(cfg config.Config) error {
 	eh := handlers.NewEquipoHandler(equiposvc)
 	ph := handlers.NewPrecioHandler(preciosSvc)
 
->>>>>>> Modulo1/Catalogo
+
 	r := chi.NewRouter()
+
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
-	r.Use(middleware.CORS)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("API Gestión de Obras e Incidencias - Funcionando"))
@@ -126,7 +120,8 @@ func run(cfg config.Config) error {
 		r.Delete("/precio/{id}", ph.BorrarUnPrecio)
 	})
 
-<<<<<<< HEAD
+
+
 	// Modulo 3
 	// Rutas
 	r.Route("/api/v1", func(r chi.Router) {
@@ -158,10 +153,10 @@ func run(cfg config.Config) error {
 	})
 
 	// 5. Servidor HTTP
-=======
+
 	routes.RegisterRoutes(r, authSvc)
 
->>>>>>> Modulo1/Catalogo
+
 	srv := httpserver.Nuevo(
 		r,
 		httpserver.ConPuerto(cfg.Puerto),
@@ -169,10 +164,8 @@ func run(cfg config.Config) error {
 		httpserver.ConWriteTimeout(cfg.WriteTimeout),
 	)
 
-<<<<<<< HEAD
 	// 6. Graceful Shutdown
-=======
->>>>>>> Modulo1/Catalogo
+
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -188,7 +181,7 @@ func run(cfg config.Config) error {
 	case err := <-errServidor:
 		return err
 	case <-ctx.Done():
-<<<<<<< HEAD
+
 		log.Println("Señal de apagado recibida, cerrando...")
 	}
 
@@ -201,7 +194,6 @@ func run(cfg config.Config) error {
 	log.Println("Servidor detenido limpiamente.")
 	return nil
 
-=======
 		log.Println("Senal de apagado recibida, cerrando ordenadamente...")
 	}
 
@@ -212,5 +204,11 @@ func run(cfg config.Config) error {
 	}
 	log.Println("Servidor detenido limpiamente.")
 	return nil
->>>>>>> Modulo1/Catalogo
+
+	const addr = ":8080"
+	log.Printf("API escuchando en http://localhost%s", addr)
+	if err := http.ListenAndServe(addr, r); err != nil {
+		log.Fatal(err)
+	}
+
 }
