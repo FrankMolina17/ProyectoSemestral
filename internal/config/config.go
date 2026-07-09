@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -18,16 +19,28 @@ type Config struct {
 }
 
 func Cargar() Config {
-	_ = godotenv.Load() // Ignora error si no existe .env
+	_ = godotenv.Load()
 
 	return Config{
-		Puerto:       conTexto("PUERTO", ":8080"),
+		Puerto:       resolverPuerto(),
 		RutaDB:       conTexto("RUTA_DB", "incidencia.db"),
 		JWTSecreto:   []byte(conTexto("JWT_SECRETO", "incidencias-uleam-secreto-dev-2026")),
 		JWTDuracion:  conDuracion("JWT_DURACION", 24*time.Hour),
 		ReadTimeout:  conDuracion("HTTP_READ_TIMEOUT", 10*time.Second),
 		WriteTimeout: conDuracion("HTTP_WRITE_TIMEOUT", 10*time.Second),
 	}
+}
+
+func resolverPuerto() string {
+	for _, clave := range []string{"PUERTO", "PORT"} {
+		if v := os.Getenv(clave); v != "" {
+			if !strings.HasPrefix(v, ":") {
+				return ":" + v
+			}
+			return v
+		}
+	}
+	return ":8080"
 }
 
 func conTexto(clave, porDefecto string) string {

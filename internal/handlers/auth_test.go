@@ -19,7 +19,7 @@ import (
 func setupAuthRouter() (chi.Router, *services.AutenticacionService, *storage.Storage) {
 	fakeStorage := storage.New()
 	authSvc := services.NuevaAutenticacionService(fakeStorage, services.AuthOptions{})
-	srv := handlers.NewServer(handlers.Deps{Autenticacion: authSvc})
+	srv := handlers.NewServerC(nil, nil, nil, nil, authSvc)
 
 	r := chi.NewRouter()
 	r.Post("/api/v1/auth/register", srv.RegistrarUser)

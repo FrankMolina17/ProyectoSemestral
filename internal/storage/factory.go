@@ -22,6 +22,7 @@ type Recursos struct {
 func Inicializar(rutaDB string) (*Recursos, error) {
 	_ = rutaDB
 	almacen := New()
+	almacen.Seed()
 	cerrar := func() error { return nil }
 	return &Recursos{
 		Almacen:      almacen,
@@ -32,10 +33,10 @@ func Inicializar(rutaDB string) (*Recursos, error) {
 }
 
 type RecursosModulo2 struct {
-	ProformaRepo  repository.ProformaRepository
-	UsuarioStore  *UsuarioStorage
-	Cerrar        func() error
-	BackendUsado  string
+	ProformaRepo repository.ProformaRepository
+	UsuarioStore *UsuarioStorage
+	Cerrar       func() error
+	BackendUsado string
 }
 
 func InicializarModulo2(dsn string) (*RecursosModulo2, error) {
