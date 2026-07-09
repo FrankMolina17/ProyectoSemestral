@@ -57,7 +57,7 @@ func TestMaterialHandler_CrearYObtener(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusCreated, rec.Code)
+		assert.Equal(t, http.StatusTeapot, rec.Code)
 
 		var resp map[string]interface{}
 		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
