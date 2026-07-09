@@ -148,22 +148,29 @@ func run(cfg config.Config) error {
 		})
 	})
 
-	// ── Módulo 3 — Obras e Incidencias ──
-	r.Route("/api/v1/obras", func(r chi.Router) {
-		r.Post("/", handlers.CrearObraHandler)
-		r.Get("/", handlers.ObtenerObrasHandler)
-		r.Get("/{id}", handlers.ObtenerObraHandler)
-		r.Put("/{id}", handlers.ActualizarObraHandler)
-		r.Delete("/{id}", handlers.EliminarObraHandler)
-	})
+	// ── Admin — crear usuario con rol admin ──
+	r.Post("/api/v1/admin/register", authHandler.RegistrarAdmin)
 
-	r.Route("/api/v1/incidencias", func(r chi.Router) {
-		r.Post("/", handlers.CrearIncidenciaHandler)
-		r.Get("/", handlers.ObtenerIncidenciasHandler)
-		r.Get("/{id}", handlers.ObtenerIncidenciaPorIDHandler)
-		r.Get("/por/{tipo}/{id}", handlers.ObtenerIncidenciasPorEntidadHandler)
-		r.Put("/{id}", handlers.ActualizarIncidenciaHandler)
-		r.Delete("/{id}", handlers.EliminarIncidenciaHandler)
+	// ── Módulo 3 — Obras e Incidencias (protegidas con JWT) ──
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.AuthJWT(authSvc))
+
+		r.Route("/api/v1/obras", func(r chi.Router) {
+			r.Post("/", handlers.CrearObraHandler)
+			r.Get("/", handlers.ObtenerObrasHandler)
+			r.Get("/{id}", handlers.ObtenerObraHandler)
+			r.Put("/{id}", handlers.ActualizarObraHandler)
+			r.Delete("/{id}", handlers.EliminarObraHandler)
+		})
+
+		r.Route("/api/v1/incidencias", func(r chi.Router) {
+			r.Post("/", handlers.CrearIncidenciaHandler)
+			r.Get("/", handlers.ObtenerIncidenciasHandler)
+			r.Get("/{id}", handlers.ObtenerIncidenciaPorIDHandler)
+			r.Get("/por/{tipo}/{id}", handlers.ObtenerIncidenciasPorEntidadHandler)
+			r.Put("/{id}", handlers.ActualizarIncidenciaHandler)
+			r.Delete("/{id}", handlers.EliminarIncidenciaHandler)
+		})
 	})
 
 	// ── Servidor HTTP ──
