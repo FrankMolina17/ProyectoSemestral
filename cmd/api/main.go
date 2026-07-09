@@ -13,6 +13,7 @@ import (
 	"Sistem-Inte-Gestion-Control-Obras/internal/handlers"
 	"Sistem-Inte-Gestion-Control-Obras/internal/httpserver"
 	"Sistem-Inte-Gestion-Control-Obras/internal/middleware"
+	"Sistem-Inte-Gestion-Control-Obras/internal/routes"
 	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
 
@@ -21,30 +22,21 @@ import (
 )
 
 func main() {
-	cfg := config.LoadConfig()
+	cfg := config.Cargar()
 	if err := run(cfg); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func run(cfg config.Config) error {
-	recursos, err := storage.Inicializar(cfg.RutaDB, cfg.Backend, cfg.Driver, cfg.DSN)
-	if err != nil {
-		return err
-	}
-	log.Printf("Backend de almacenamiento activo: %s (ruta: %s)", recursos.BackendUsado, cfg.RutaDB)
-	defer func() {
-		if err := recursos.Cerrar(); err != nil {
-			log.Printf("Backend cerrado (%s): %v", recursos.BackendUsado, err)
-		}
-	}()
+	recursos := storage.New()
 
-	materialsvc := services.NewMaterialService(recursos.Almacen)
-	manoobraSvc := services.NewManoObraService(recursos.ManoObra)
-	equiposvc := services.NewEquipoService(recursos.Equipos)
-	preciosSvc := services.NewPreciosService(recursos.Precios)
-	authSvc := services.NuevaAutenticacionService(recursos.Usuarios, services.AuthOptions{
-		Secreto:  []byte(cfg.JWTSecreto),
+	materialsvc := services.NewMaterialService(recursos)
+	manoobraSvc := services.NewManoObraService(recursos)
+	equiposvc := services.NewEquipoService(recursos)
+	preciosSvc := services.NewPreciosService(recursos)
+	authSvc := services.NuevaAutenticacionService(recursos, services.AuthOptions{
+		Secreto:  cfg.JWTSecreto,
 		Duracion: cfg.JWTDuracion,
 	})
 
@@ -60,7 +52,7 @@ func run(cfg config.Config) error {
 	r.Use(chimw.Recoverer)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(" Sistem-Inte-Gestion-Control-Obras/internal/routes - Servidor funcionando correctamente"))
+		w.Write([]byte("API Gestión de Obras e Incidencias - Funcionando"))
 	})
 
 	r.Post("/api/v1/usuarios/registrar", serverC.RegistrarUser)
@@ -68,7 +60,6 @@ func run(cfg config.Config) error {
 	r.Route("/api/v1/auth", func(r chi.Router) {
 		r.Post("/login", serverC.LoginUser)
 	})
-	r.Post("/api/v1/usuarios/login", serverC.LoginUser)
 
 	r.Route("/api/v1/catalogo", func(r chi.Router) {
 		r.Use(middleware.AuthJWT(authSvc))
@@ -100,7 +91,8 @@ func run(cfg config.Config) error {
 		r.Delete("/precio/{id}", ph.BorrarUnPrecio)
 	})
 
-	// 6. Servidor HTTP configurado por Options (puerto + timeouts desde config).
+	routes.RegisterRoutes(r, authSvc)
+
 	srv := httpserver.Nuevo(
 		r,
 		httpserver.ConPuerto(cfg.Puerto),
@@ -108,11 +100,9 @@ func run(cfg config.Config) error {
 		httpserver.ConWriteTimeout(cfg.WriteTimeout),
 	)
 
-	// 7. Contexto que se cancela al recibir Ctrl+C o SIGTERM.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// 8. Arrancar el servidor en una goroutine para no bloquear la espera de la senal.
 	errServidor := make(chan error, 1)
 	go func() {
 		log.Printf("Servidor escuchando en http://localhost%s", cfg.Puerto)
@@ -121,7 +111,6 @@ func run(cfg config.Config) error {
 		}
 	}()
 
-	// 9. Esperar: o el servidor falla, o llega la senal de apagado.
 	select {
 	case err := <-errServidor:
 		return err
@@ -129,7 +118,6 @@ func run(cfg config.Config) error {
 		log.Println("Senal de apagado recibida, cerrando ordenadamente...")
 	}
 
-	// 10. Graceful shutdown: hasta 10s para terminar las requests en curso.
 	ctxApagado, cancelar := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancelar()
 	if err := srv.Shutdown(ctxApagado); err != nil {
