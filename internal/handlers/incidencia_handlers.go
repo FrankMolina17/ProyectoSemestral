@@ -4,116 +4,121 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
-
-	"github.com/go-chi/chi/v5"
 
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
+	"Sistem-Inte-Gestion-Control-Obras/internal/services"
+
+	"github.com/go-chi/chi/v5"
 )
 
-// CrearIncidencia atiende POST /api/v1/incidencias
-func (s *Server) CrearIncidencia(w http.ResponseWriter, r *http.Request) {
+func CrearIncidenciaHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
 	var incidencia models.Incidencia
 	if err := json.NewDecoder(r.Body).Decode(&incidencia); err != nil {
-		RespondJSON(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+		http.Error(w, "Datos inválidos", http.StatusBadRequest)
 		return
 	}
-	nueva, err := s.IncidenciaService.CrearIncidencia(incidencia)
+
+	nueva, err := services.CrearIncidencia(incidencia)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	RespondJSON(w, http.StatusCreated, nueva)
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(nueva)
 }
 
-// ObtenerIncidencias atiende GET /api/v1/incidencias
-func (s *Server) ObtenerIncidencias(w http.ResponseWriter, r *http.Request) {
-	incidencias := s.IncidenciaService.Listar()
-	RespondJSON(w, http.StatusOK, incidencias)
+func ObtenerIncidenciasHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	incidencias := services.ObtenerIncidencias()
+	if len(incidencias) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	json.NewEncoder(w).Encode(incidencias)
 }
 
-// ObtenerIncidenciaPorID atiende GET /api/v1/incidencias/{id}
-func (s *Server) ObtenerIncidenciaPorID(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+func ObtenerIncidenciaPorIDHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
 
-	incidencia, err := s.IncidenciaService.Obtener(id)
-	if err != nil {
-		RespondError(w, http.StatusNotFound, "Incidencia no encontrada")
+	incidencia, encontrado := services.ObtenerIncidenciaPorID(id)
+	if !encontrado {
+		http.Error(w, "Incidencia no encontrada", http.StatusNotFound)
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, incidencia)
+	json.NewEncoder(w).Encode(incidencia)
 }
 
-// ObtenerIncidenciasPorEntidad atiende GET /api/v1/incidencias/por/{tipo}/{id}
-func (s *Server) ObtenerIncidenciasPorEntidad(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+func ObtenerIncidenciasPorEntidadHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	entidadTipo := chi.URLParam(r, "tipo")
+	idStr := chi.URLParam(r, "id")
+
+	entidadID, err := strconv.Atoi(idStr)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
 
-	tipo := chi.URLParam(r, "tipo")
-
-	if tipo == "" {
-		RespondError(w, http.StatusBadRequest, "Tipo es requerido")
+	incidencias := services.ObtenerIncidenciasPorEntidad(entidadTipo, entidadID)
+	if len(incidencias) == 0 {
+		http.Error(w, "Incidencia no encontrada", http.StatusNotFound)
 		return
 	}
-
-	incidencia, err := s.IncidenciaService.ObtenerPorEntidad(id, tipo)
-
-	if err != nil {
-		RespondError(w, http.StatusNotFound, "Incidencia no encontrada")
-		return
-	}
-
-	RespondJSON(w, http.StatusOK, incidencia)
+	json.NewEncoder(w).Encode(incidencias)
 }
 
-// EliminarIncidencia atiende DELETE /api/v1/incidencias/{id}
-func (s *Server) EliminarIncidencia(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+func ActualizarIncidenciaHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
-		return
-	}
-
-	if err := s.IncidenciaService.BorrarIncidencia(id); err != nil {
-		RespondError(w, http.StatusNotFound, err.Error())
-		return
-	}
-
-	RespondJSON(w, http.StatusNoContent, nil)
-}
-
-func (s *Server) ActualizarIncidencia(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(chi.URLParam(r, "id"))
-	if err != nil {
-		RespondError(w, http.StatusBadRequest, "id debe ser un número entero")
+		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
 
 	var datos models.Incidencia
 	if err := json.NewDecoder(r.Body).Decode(&datos); err != nil {
-		RespondError(w, http.StatusBadRequest, "JSON inválido: "+err.Error())
+		http.Error(w, "Datos inválidos", http.StatusBadRequest)
 		return
 	}
 
-	if strings.TrimSpace(datos.Titulo) == "" {
-		RespondError(w, http.StatusBadRequest, "el campo nombre es obligatorio")
-		return
-	}
-
-	actualizada, err := s.IncidenciaService.ActualizarIncidencia(id, datos)
-
+	actualizada, err := services.ActualizarIncidencia(id, datos)
 	if err != nil {
-		RespondError(w, http.StatusNotFound, "categoría no encontrada")
+		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 
-	RespondJSON(w, http.StatusOK, actualizada)
+	json.NewEncoder(w).Encode(actualizada)
+}
+
+func EliminarIncidenciaHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+
+	err = services.EliminarIncidencia(id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent) // 204 No Content
 }
