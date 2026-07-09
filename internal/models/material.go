@@ -7,27 +7,21 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// ─────────────────────────────────────────────
-// MATERIAL
-// ─────────────────────────────────────────────
-
 type Material struct {
-	ID               int             `json:"id"`
-	Nombre           string          `json:"nombre"`
+	ID               int             `json:"id" gorm:"primaryKey;autoIncrement"`
+	Nombre           string          `json:"nombre" gorm:"not null"`
 	Descripcion      string          `json:"descripcion"`
-	Unidad           string          `json:"unidad"`
-	PrecioReferencia decimal.Decimal `json:"precio_referencia"`
-	CreatedAt        time.Time       `json:"created_at"`
+	Unidad           string          `json:"unidad" gorm:"not null"`
+	PrecioReferencia decimal.Decimal `json:"precio_referencia" gorm:"type:decimal(12,2);not null"`
+	CreatedAt        time.Time       `json:"created_at" gorm:"autoCreateTime"`
+	Precios          []PrecioRecurso `json:"precios,omitempty" gorm:"foreignKey:RecursoID;constraint:OnDelete:CASCADE"`
 }
 
-// MaterialInput es una estructura que representa la información de entrada para un material. 
-// Contiene los campos Nombre, Descripcion, Unidad y PrecioReferencia.
-//si la unidad no es permitida retorna un error
 type EntradaMaterial struct {
-	Nombre           string          `json:"nombre"`
-	Descripcion      string          `json:"descripcion"`
-	Unidad           string          `json:"unidad"`
-	PrecioReferencia string          `json:"precio_referencia"`
+	Nombre           string `json:"nombre"`
+	Descripcion      string `json:"descripcion"`
+	Unidad           string `json:"unidad"`
+	PrecioReferencia string `json:"precio_referencia"`
 }
 
 var UnidadesPermitidas = map[string]bool{
@@ -53,18 +47,16 @@ func (m EntradaMaterial) ValidarMaterial() error {
 	return nil
 }
 
-// ─────────────────────────────────────────────
-// MANO DE OBRA
-// ─────────────────────────────────────────────
-
 type ManoObra struct {
-	ID              int             `json:"id"`
-	Descripcion     string          `json:"descripcion"`
-	Categoria       string          `json:"categoria"`
-	Unidad          string          `json:"unidad"`
-	CostoReferencia decimal.Decimal `json:"costo_referencia"`
-	CreatedAt       time.Time       `json:"created_at"`
+	ID              int             `json:"id" gorm:"primaryKey;autoIncrement"`
+	Descripcion     string          `json:"descripcion" gorm:"not null"`
+	Categoria       string          `json:"categoria" gorm:"not null"`
+	Unidad          string          `json:"unidad" gorm:"not null"`
+	CostoReferencia decimal.Decimal `json:"costo_referencia" gorm:"type:decimal(12,2);not null"`
+	CreatedAt       time.Time       `json:"created_at" gorm:"autoCreateTime"`
+	Precios         []PrecioRecurso `json:"precios,omitempty" gorm:"foreignKey:RecursoID;constraint:OnDelete:CASCADE"`
 }
+
 type EntradaManoObra struct {
 	Descripcion     string          `json:"descripcion"`
 	Categoria       string          `json:"categoria"`
@@ -96,18 +88,15 @@ func (m EntradaManoObra) ValidarManoObra() error {
 	return nil
 }
 
-// ─────────────────────────────────────────────
-// EQUIPO
-// ─────────────────────────────────────────────
-
 type Equipo struct {
-	ID         int             `json:"id"`
-	Nombre     string          `json:"nombre"`
-	Tipo       string          `json:"tipo"`
-	Unidad     string          `json:"unidad"`
-	CostoHora  decimal.Decimal `json:"costo_hora"`
-	Disponible bool            `json:"disponible"`
-	CreatedAt  time.Time       `json:"created_at"`
+	ID         int             `json:"id" gorm:"primaryKey;autoIncrement"`
+	Nombre     string          `json:"nombre" gorm:"not null"`
+	Tipo       string          `json:"tipo" gorm:"not null"`
+	Unidad     string          `json:"unidad" gorm:"not null"`
+	CostoHora  decimal.Decimal `json:"costo_hora" gorm:"type:decimal(12,2);not null"`
+	Disponible bool            `json:"disponible" gorm:"default:true"`
+	CreatedAt  time.Time       `json:"created_at" gorm:"autoCreateTime"`
+	Precios    []PrecioRecurso `json:"precios,omitempty" gorm:"foreignKey:RecursoID;constraint:OnDelete:CASCADE"`
 }
 
 type EntradaEquipo struct {
@@ -138,17 +127,13 @@ func (e EntradaEquipo) ValidarEquipo() error {
 	return nil
 }
 
-// ─────────────────────────────────────────────
-// PRECIO RECURSO
-// ─────────────────────────────────────────────
-
 type PrecioRecurso struct {
-	ID            int             `json:"id"`
-	RecursoTipo   string          `json:"recurso_tipo"`
-	RecursoID     int             `json:"recurso_id"`
-	Precio        decimal.Decimal `json:"precio"`
-	FechaVigencia time.Time       `json:"fecha_vigencia"`
-	CreatedAt     time.Time       `json:"created_at"`
+	ID            int             `json:"id" gorm:"primaryKey;autoIncrement"`
+	RecursoTipo   string          `json:"recurso_tipo" gorm:"not null;index"`
+	RecursoID     int             `json:"recurso_id" gorm:"not null;index"`
+	Precio        decimal.Decimal `json:"precio" gorm:"type:decimal(12,2);not null"`
+	FechaVigencia time.Time       `json:"fecha_vigencia" gorm:"not null"`
+	CreatedAt     time.Time       `json:"created_at" gorm:"autoCreateTime"`
 }
 
 type EntradaPrecioRecurso struct {
