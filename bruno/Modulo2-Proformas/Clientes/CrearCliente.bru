@@ -1,0 +1,25 @@
+meta {
+  name: CrearCliente
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/api/v1/clientes
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "nombre": "Constructora del Pacífico",
+    "email": "contacto@pacifico.com",
+    "telefono": "0991234567",
+    "ruc": "1234567890001"
+  }
+}

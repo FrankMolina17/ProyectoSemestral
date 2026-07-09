@@ -1,0 +1,26 @@
+meta {
+  name: AgregarItemMaterial
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{url}}/api/v1/proformas/1/items
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "descripcion": "Cemento Portland",
+    "tipo_recurso": "material",
+    "recurso_id": 1,
+    "cantidad": 10,
+    "precio_promedio": 12.50
+  }
+}

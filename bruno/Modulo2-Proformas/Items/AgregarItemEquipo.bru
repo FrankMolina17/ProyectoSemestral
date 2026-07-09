@@ -1,0 +1,26 @@
+meta {
+  name: AgregarItemEquipo
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/api/v1/proformas/1/items
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "descripcion": "Mezcladora de concreto",
+    "tipo_recurso": "equipo",
+    "recurso_id": 3,
+    "cantidad": 2,
+    "precio_promedio": 50.00
+  }
+}

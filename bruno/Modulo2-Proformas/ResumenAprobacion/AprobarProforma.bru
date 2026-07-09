@@ -1,0 +1,15 @@
+meta {
+  name: AprobarProforma
+  type: http
+  seq: 2
+}
+
+put {
+  url: {{url}}/api/v1/proformas/1/aprobar
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}

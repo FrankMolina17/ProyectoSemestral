@@ -1,0 +1,24 @@
+meta {
+  name: ActualizarProforma
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{url}}/api/v1/proformas/1
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "nombre": "Proforma Edificio Central v2",
+    "pct_ganancia": 0.12,
+    "pct_imprevisto": 0.05
+  }
+}

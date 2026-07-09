@@ -1,0 +1,22 @@
+meta {
+  name: SinNombre400
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/api/v1/proformas
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "obra_id": 1
+  }
+}

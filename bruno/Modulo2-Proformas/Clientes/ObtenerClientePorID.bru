@@ -1,0 +1,15 @@
+meta {
+  name: ObtenerClientePorID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{url}}/api/v1/clientes/1
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}

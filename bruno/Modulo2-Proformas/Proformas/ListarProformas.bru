@@ -1,0 +1,15 @@
+meta {
+  name: ListarProformas
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/api/v1/proformas
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}

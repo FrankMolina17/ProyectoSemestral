@@ -1,0 +1,15 @@
+meta {
+  name: EliminarProforma
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{url}}/api/v1/proformas/1
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}

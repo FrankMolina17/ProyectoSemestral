@@ -1,0 +1,15 @@
+meta {
+  name: ListarNotas
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/api/v1/proformas/1/notas
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}

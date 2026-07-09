@@ -1,0 +1,26 @@
+meta {
+  name: AgregarItemManoObra
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/api/v1/proformas/1/items
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "descripcion": "Albañil",
+    "tipo_recurso": "mano_obra",
+    "recurso_id": 2,
+    "cantidad": 5,
+    "precio_promedio": 30.00
+  }
+}

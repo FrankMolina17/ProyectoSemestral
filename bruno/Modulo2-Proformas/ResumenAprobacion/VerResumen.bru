@@ -1,0 +1,15 @@
+meta {
+  name: VerResumen
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/api/v1/proformas/1/resumen
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}

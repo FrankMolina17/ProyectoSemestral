@@ -1,0 +1,25 @@
+meta {
+  name: ActualizarCliente
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{url}}/api/v1/clientes/1
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Authorization: Bearer {{token}}
+}
+
+body:json {
+  {
+    "nombre": "Constructora del Pacífico S.A.",
+    "email": "info@pacifico.com",
+    "telefono": "0997654321",
+    "ruc": "1234567890001"
+  }
+}
