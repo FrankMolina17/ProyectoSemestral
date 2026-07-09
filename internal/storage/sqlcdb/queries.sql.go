@@ -10,6 +10,77 @@ import (
 	"database/sql"
 )
 
+const actualizarEquipo = `-- name: ActualizarEquipo :one
+UPDATE equipo SET nombre = ?, tipo = ?, unidad = ?, costo_hora = ?, disponible = ?
+WHERE id = ?
+RETURNING id, nombre, tipo, unidad, costo_hora, disponible, created_at
+`
+
+type ActualizarEquipoParams struct {
+	Nombre     string
+	Tipo       string
+	Unidad     string
+	CostoHora  string
+	Disponible int64
+	ID         int64
+}
+
+func (q *Queries) ActualizarEquipo(ctx context.Context, arg ActualizarEquipoParams) (Equipo, error) {
+	row := q.db.QueryRowContext(ctx, actualizarEquipo,
+		arg.Nombre,
+		arg.Tipo,
+		arg.Unidad,
+		arg.CostoHora,
+		arg.Disponible,
+		arg.ID,
+	)
+	var i Equipo
+	err := row.Scan(
+		&i.ID,
+		&i.Nombre,
+		&i.Tipo,
+		&i.Unidad,
+		&i.CostoHora,
+		&i.Disponible,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const actualizarManoObra = `-- name: ActualizarManoObra :one
+UPDATE mano_obra SET descripcion = ?, categoria = ?, unidad = ?, costo_referencia = ?
+WHERE id = ?
+RETURNING id, descripcion, categoria, unidad, costo_referencia, created_at
+`
+
+type ActualizarManoObraParams struct {
+	Descripcion     string
+	Categoria       string
+	Unidad          string
+	CostoReferencia string
+	ID              int64
+}
+
+func (q *Queries) ActualizarManoObra(ctx context.Context, arg ActualizarManoObraParams) (ManoObra, error) {
+	row := q.db.QueryRowContext(ctx, actualizarManoObra,
+		arg.Descripcion,
+		arg.Categoria,
+		arg.Unidad,
+		arg.CostoReferencia,
+		arg.ID,
+	)
+	var i ManoObra
+	err := row.Scan(
+		&i.ID,
+		&i.Descripcion,
+		&i.Categoria,
+		&i.Unidad,
+		&i.CostoReferencia,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const actualizarMateriales = `-- name: ActualizarMateriales :one
 UPDATE material SET nombre = ?, descripcion = ?, unidad = ?, precio_referencia = ?
 WHERE id = ?
@@ -44,6 +115,101 @@ func (q *Queries) ActualizarMateriales(ctx context.Context, arg ActualizarMateri
 	return i, err
 }
 
+const actualizarPrecio = `-- name: ActualizarPrecio :one
+UPDATE precios SET recurso_tipo = ?, recurso_id = ?, precio = ?, fecha_vigencia = ?
+WHERE id = ?
+RETURNING id, recurso_tipo, recurso_id, precio, fecha_vigencia, created_at
+`
+
+type ActualizarPrecioParams struct {
+	RecursoTipo   string
+	RecursoID     int64
+	Precio        string
+	FechaVigencia string
+	ID            int64
+}
+
+func (q *Queries) ActualizarPrecio(ctx context.Context, arg ActualizarPrecioParams) (Precio, error) {
+	row := q.db.QueryRowContext(ctx, actualizarPrecio,
+		arg.RecursoTipo,
+		arg.RecursoID,
+		arg.Precio,
+		arg.FechaVigencia,
+		arg.ID,
+	)
+	var i Precio
+	err := row.Scan(
+		&i.ID,
+		&i.RecursoTipo,
+		&i.RecursoID,
+		&i.Precio,
+		&i.FechaVigencia,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const actualizarUsuario = `-- name: ActualizarUsuario :one
+UPDATE usuario SET email = ?, password_hash = ?
+WHERE id = ?
+RETURNING id, email, password_hash, created_at
+`
+
+type ActualizarUsuarioParams struct {
+	Email        string
+	PasswordHash string
+	ID           int64
+}
+
+func (q *Queries) ActualizarUsuario(ctx context.Context, arg ActualizarUsuarioParams) (Usuario, error) {
+	row := q.db.QueryRowContext(ctx, actualizarUsuario, arg.Email, arg.PasswordHash, arg.ID)
+	var i Usuario
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const buscarEquipoPorID = `-- name: BuscarEquipoPorID :one
+SELECT id, nombre, tipo, unidad, costo_hora, disponible, created_at FROM equipo WHERE id = ?
+`
+
+func (q *Queries) BuscarEquipoPorID(ctx context.Context, id int64) (Equipo, error) {
+	row := q.db.QueryRowContext(ctx, buscarEquipoPorID, id)
+	var i Equipo
+	err := row.Scan(
+		&i.ID,
+		&i.Nombre,
+		&i.Tipo,
+		&i.Unidad,
+		&i.CostoHora,
+		&i.Disponible,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const buscarManoObraPorID = `-- name: BuscarManoObraPorID :one
+SELECT id, descripcion, categoria, unidad, costo_referencia, created_at FROM mano_obra WHERE id = ?
+`
+
+func (q *Queries) BuscarManoObraPorID(ctx context.Context, id int64) (ManoObra, error) {
+	row := q.db.QueryRowContext(ctx, buscarManoObraPorID, id)
+	var i ManoObra
+	err := row.Scan(
+		&i.ID,
+		&i.Descripcion,
+		&i.Categoria,
+		&i.Unidad,
+		&i.CostoReferencia,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const buscarMaterialPorID = `-- name: BuscarMaterialPorID :one
 SELECT id, nombre, descripcion, unidad, precio_referencia, created_at FROM material WHERE id = ?
 `
@@ -57,6 +223,127 @@ func (q *Queries) BuscarMaterialPorID(ctx context.Context, id int64) (Material, 
 		&i.Descripcion,
 		&i.Unidad,
 		&i.PrecioReferencia,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const buscarPrecioPorID = `-- name: BuscarPrecioPorID :one
+SELECT id, recurso_tipo, recurso_id, precio, fecha_vigencia, created_at FROM precios WHERE id = ?
+`
+
+func (q *Queries) BuscarPrecioPorID(ctx context.Context, id int64) (Precio, error) {
+	row := q.db.QueryRowContext(ctx, buscarPrecioPorID, id)
+	var i Precio
+	err := row.Scan(
+		&i.ID,
+		&i.RecursoTipo,
+		&i.RecursoID,
+		&i.Precio,
+		&i.FechaVigencia,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const buscarUsuarioPorEmail = `-- name: BuscarUsuarioPorEmail :one
+SELECT id, email, password_hash, created_at FROM usuario WHERE email = ?
+`
+
+func (q *Queries) BuscarUsuarioPorEmail(ctx context.Context, email string) (Usuario, error) {
+	row := q.db.QueryRowContext(ctx, buscarUsuarioPorEmail, email)
+	var i Usuario
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const buscarUsuarioPorID = `-- name: BuscarUsuarioPorID :one
+SELECT id, email, password_hash, created_at FROM usuario WHERE id = ?
+`
+
+func (q *Queries) BuscarUsuarioPorID(ctx context.Context, id int64) (Usuario, error) {
+	row := q.db.QueryRowContext(ctx, buscarUsuarioPorID, id)
+	var i Usuario
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const crearEquipo = `-- name: CrearEquipo :one
+INSERT INTO equipo (nombre, tipo, unidad, costo_hora, disponible, created_at)
+VALUES (?, ?, ?, ?, ?, ?)
+RETURNING id, nombre, tipo, unidad, costo_hora, disponible, created_at
+`
+
+type CrearEquipoParams struct {
+	Nombre     string
+	Tipo       string
+	Unidad     string
+	CostoHora  string
+	Disponible int64
+	CreatedAt  string
+}
+
+func (q *Queries) CrearEquipo(ctx context.Context, arg CrearEquipoParams) (Equipo, error) {
+	row := q.db.QueryRowContext(ctx, crearEquipo,
+		arg.Nombre,
+		arg.Tipo,
+		arg.Unidad,
+		arg.CostoHora,
+		arg.Disponible,
+		arg.CreatedAt,
+	)
+	var i Equipo
+	err := row.Scan(
+		&i.ID,
+		&i.Nombre,
+		&i.Tipo,
+		&i.Unidad,
+		&i.CostoHora,
+		&i.Disponible,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const crearManoObra = `-- name: CrearManoObra :one
+INSERT INTO mano_obra (descripcion, categoria, unidad, costo_referencia, created_at)
+VALUES (?, ?, ?, ?, ?)
+RETURNING id, descripcion, categoria, unidad, costo_referencia, created_at
+`
+
+type CrearManoObraParams struct {
+	Descripcion     string
+	Categoria       string
+	Unidad          string
+	CostoReferencia string
+	CreatedAt       string
+}
+
+func (q *Queries) CrearManoObra(ctx context.Context, arg CrearManoObraParams) (ManoObra, error) {
+	row := q.db.QueryRowContext(ctx, crearManoObra,
+		arg.Descripcion,
+		arg.Categoria,
+		arg.Unidad,
+		arg.CostoReferencia,
+		arg.CreatedAt,
+	)
+	var i ManoObra
+	err := row.Scan(
+		&i.ID,
+		&i.Descripcion,
+		&i.Categoria,
+		&i.Unidad,
+		&i.CostoReferencia,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -96,6 +383,88 @@ func (q *Queries) CrearMateriales(ctx context.Context, arg CrearMaterialesParams
 	return i, err
 }
 
+const crearPrecio = `-- name: CrearPrecio :one
+INSERT INTO precios (recurso_tipo, recurso_id, precio, fecha_vigencia, created_at)
+VALUES (?, ?, ?, ?, ?)
+RETURNING id, recurso_tipo, recurso_id, precio, fecha_vigencia, created_at
+`
+
+type CrearPrecioParams struct {
+	RecursoTipo   string
+	RecursoID     int64
+	Precio        string
+	FechaVigencia string
+	CreatedAt     string
+}
+
+func (q *Queries) CrearPrecio(ctx context.Context, arg CrearPrecioParams) (Precio, error) {
+	row := q.db.QueryRowContext(ctx, crearPrecio,
+		arg.RecursoTipo,
+		arg.RecursoID,
+		arg.Precio,
+		arg.FechaVigencia,
+		arg.CreatedAt,
+	)
+	var i Precio
+	err := row.Scan(
+		&i.ID,
+		&i.RecursoTipo,
+		&i.RecursoID,
+		&i.Precio,
+		&i.FechaVigencia,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const crearUsuario = `-- name: CrearUsuario :one
+INSERT INTO usuario (email, password_hash, created_at)
+VALUES (?, ?, ?)
+RETURNING id, email, password_hash, created_at
+`
+
+type CrearUsuarioParams struct {
+	Email        string
+	PasswordHash string
+	CreatedAt    string
+}
+
+func (q *Queries) CrearUsuario(ctx context.Context, arg CrearUsuarioParams) (Usuario, error) {
+	row := q.db.QueryRowContext(ctx, crearUsuario, arg.Email, arg.PasswordHash, arg.CreatedAt)
+	var i Usuario
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const eliminarEquipo = `-- name: EliminarEquipo :execrows
+DELETE FROM equipo WHERE id = ?
+`
+
+func (q *Queries) EliminarEquipo(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, eliminarEquipo, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const eliminarManoObra = `-- name: EliminarManoObra :execrows
+DELETE FROM mano_obra WHERE id = ?
+`
+
+func (q *Queries) EliminarManoObra(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, eliminarManoObra, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const eliminarMateriales = `-- name: EliminarMateriales :execrows
 DELETE FROM material WHERE id = ?
 `
@@ -106,6 +475,99 @@ func (q *Queries) EliminarMateriales(ctx context.Context, id int64) (int64, erro
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const eliminarPrecio = `-- name: EliminarPrecio :execrows
+DELETE FROM precios WHERE id = ?
+`
+
+func (q *Queries) EliminarPrecio(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, eliminarPrecio, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const eliminarUsuario = `-- name: EliminarUsuario :execrows
+DELETE FROM usuario WHERE id = ?
+`
+
+func (q *Queries) EliminarUsuario(ctx context.Context, id int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, eliminarUsuario, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const listarEquipos = `-- name: ListarEquipos :many
+SELECT id, nombre, tipo, unidad, costo_hora, disponible, created_at FROM equipo ORDER BY id
+`
+
+func (q *Queries) ListarEquipos(ctx context.Context) ([]Equipo, error) {
+	rows, err := q.db.QueryContext(ctx, listarEquipos)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Equipo
+	for rows.Next() {
+		var i Equipo
+		if err := rows.Scan(
+			&i.ID,
+			&i.Nombre,
+			&i.Tipo,
+			&i.Unidad,
+			&i.CostoHora,
+			&i.Disponible,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listarManoObra = `-- name: ListarManoObra :many
+SELECT id, descripcion, categoria, unidad, costo_referencia, created_at FROM mano_obra ORDER BY id
+`
+
+func (q *Queries) ListarManoObra(ctx context.Context) ([]ManoObra, error) {
+	rows, err := q.db.QueryContext(ctx, listarManoObra)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ManoObra
+	for rows.Next() {
+		var i ManoObra
+		if err := rows.Scan(
+			&i.ID,
+			&i.Descripcion,
+			&i.Categoria,
+			&i.Unidad,
+			&i.CostoReferencia,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listarMateriales = `-- name: ListarMateriales :many
@@ -127,6 +589,111 @@ func (q *Queries) ListarMateriales(ctx context.Context) ([]Material, error) {
 			&i.Descripcion,
 			&i.Unidad,
 			&i.PrecioReferencia,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listarPrecios = `-- name: ListarPrecios :many
+SELECT id, recurso_tipo, recurso_id, precio, fecha_vigencia, created_at FROM precios ORDER BY id
+`
+
+func (q *Queries) ListarPrecios(ctx context.Context) ([]Precio, error) {
+	rows, err := q.db.QueryContext(ctx, listarPrecios)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Precio
+	for rows.Next() {
+		var i Precio
+		if err := rows.Scan(
+			&i.ID,
+			&i.RecursoTipo,
+			&i.RecursoID,
+			&i.Precio,
+			&i.FechaVigencia,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listarPreciosPorRecurso = `-- name: ListarPreciosPorRecurso :many
+SELECT id, recurso_tipo, recurso_id, precio, fecha_vigencia, created_at FROM precios WHERE recurso_tipo = ? AND recurso_id = ? ORDER BY fecha_vigencia DESC
+`
+
+type ListarPreciosPorRecursoParams struct {
+	RecursoTipo string
+	RecursoID   int64
+}
+
+func (q *Queries) ListarPreciosPorRecurso(ctx context.Context, arg ListarPreciosPorRecursoParams) ([]Precio, error) {
+	rows, err := q.db.QueryContext(ctx, listarPreciosPorRecurso, arg.RecursoTipo, arg.RecursoID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Precio
+	for rows.Next() {
+		var i Precio
+		if err := rows.Scan(
+			&i.ID,
+			&i.RecursoTipo,
+			&i.RecursoID,
+			&i.Precio,
+			&i.FechaVigencia,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listarUsuarios = `-- name: ListarUsuarios :many
+SELECT id, email, password_hash, created_at FROM usuario ORDER BY id
+`
+
+func (q *Queries) ListarUsuarios(ctx context.Context) ([]Usuario, error) {
+	rows, err := q.db.QueryContext(ctx, listarUsuarios)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Usuario
+	for rows.Next() {
+		var i Usuario
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.PasswordHash,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

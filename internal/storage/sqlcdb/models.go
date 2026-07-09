@@ -8,6 +8,25 @@ import (
 	"database/sql"
 )
 
+type Equipo struct {
+	ID         int64
+	Nombre     string
+	Tipo       string
+	Unidad     string
+	CostoHora  string
+	Disponible int64
+	CreatedAt  string
+}
+
+type ManoObra struct {
+	ID              int64
+	Descripcion     string
+	Categoria       string
+	Unidad          string
+	CostoReferencia string
+	CreatedAt       string
+}
+
 type Material struct {
 	ID               int64
 	Nombre           string
@@ -15,4 +34,20 @@ type Material struct {
 	Unidad           string
 	PrecioReferencia string
 	CreatedAt        string
+}
+
+type Precio struct {
+	ID            int64
+	RecursoTipo   string
+	RecursoID     int64
+	Precio        string
+	FechaVigencia string
+	CreatedAt     string
+}
+
+type Usuario struct {
+	ID           int64
+	Email        string
+	PasswordHash string
+	CreatedAt    string
 }

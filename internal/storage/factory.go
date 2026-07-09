@@ -1,5 +1,6 @@
 package storage
 
+<<<<<<< HEAD
 import (
 	"fmt"
 
@@ -13,10 +14,16 @@ import (
 type Recursos struct {
 	Almacen      Almacen
 	Usuarios     UserRepository
+=======
+type Recursos struct {
+	Almacen      *Storage
+	Usuarios     *Storage
+>>>>>>> Modulo1/Catalogo
 	BackendUsado string
 	Cerrar       func() error
 }
 
+<<<<<<< HEAD
 // Inicializar crea los recursos de almacenamiento
 func Inicializar(rutaDB string) (*Recursos, error) {
 	gdb, err := gorm.Open(sqlite.Open(rutaDB), &gorm.Config{})
@@ -44,6 +51,21 @@ func Inicializar(rutaDB string) (*Recursos, error) {
 		Almacen:      almacenGorm,
 		Usuarios:     usuarios,
 		BackendUsado: "gorm",
+=======
+func Inicializar(rutaDB string) (*Recursos, error) {
+	_ = rutaDB
+
+	almacen := New()
+
+	cerrar := func() error {
+		return nil
+	}
+
+	return &Recursos{
+		Almacen:      almacen,
+		Usuarios:     almacen,
+		BackendUsado: "memoria",
+>>>>>>> Modulo1/Catalogo
 		Cerrar:       cerrar,
 	}, nil
 }

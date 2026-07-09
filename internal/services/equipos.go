@@ -54,6 +54,13 @@ func (s *EquipoService) ActualizarE(id int, in models.EntradaEquipo) (*models.Eq
 
 }
 
+func (s *EquipoService) EliminarE(id int) error {
+	if err := s.repo.EliminarEquipo(id); err != nil {
+		return ErrNoEncontrado
+	}
+	return nil
+}
+
 //validar
 func ValidarE(in models.EntradaEquipo) error {
 

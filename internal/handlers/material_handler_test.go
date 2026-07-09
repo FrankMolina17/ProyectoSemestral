@@ -17,8 +17,8 @@ import (
 
 func setupMaterialRouter() (chi.Router, *services.AutenticacionService, *storage.Storage) {
 	fakeStorage := storage.New()
-	authSvc := services.NuevaAutenticacionService(fakeStorage)
-	mh := NewMaterialHandler(fakeStorage)
+	authSvc := services.NuevaAutenticacionService(fakeStorage, services.AuthOptions{})
+	mh := NewMaterialHandler(services.NewMaterialService(fakeStorage))
 
 	r := chi.NewRouter()
 	r.Group(func(r chi.Router) {

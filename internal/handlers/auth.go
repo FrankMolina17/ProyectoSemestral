@@ -20,7 +20,7 @@ func (s *ServerC) RegistrarUser(w http.ResponseWriter, r *http.Request) {
 	}
 	usuario, err := s.Autenticacion.RegistrarUsuario(credenciales.Email, credenciales.Password)
 	if err != nil {
-		RespondError(w, http.StatusBadRequest, err.Error())
+		RespondError(w, StatusDeError(err), err.Error())
 		return
 	}
 	RespondJSON(w, http.StatusCreated, map[string]any{"id": usuario.ID, "email": usuario.Email})

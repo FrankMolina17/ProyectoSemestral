@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
-	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
 	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 )
 
@@ -13,17 +13,16 @@ import (
 // ─────────────────────────────────────────────
 
 type MaterialHandler struct {
-	s *storage.Storage
+	svc *services.MaterialService
 }
 
-func NewMaterialHandler(s *storage.Storage) *MaterialHandler {
-	return &MaterialHandler{s}
+func NewMaterialHandler(svc *services.MaterialService) *MaterialHandler {
+	return &MaterialHandler{svc: svc}
 }
 
 // GET /material  →  200
 func (h *MaterialHandler) ListandoMateriales(w http.ResponseWriter, r *http.Request) {
-	material := h.s.ListarMateriales()
-	RespondJSON(w, http.StatusOK, material)
+	services.Ok(w, h.svc.Listado())
 }
 
 // GET /material/{id}  →  200 | 404
@@ -32,15 +31,15 @@ func (h *MaterialHandler) ObtenerMaterialPorID(w http.ResponseWriter, r *http.Re
 	if !valid {
 		return
 	}
-	material, ok := h.s.ObtenerMateriales(id)
-	if !ok {
-		services.NoEncontrado(w, "material", id)
+	m, err := h.svc.ObtenerM(id)
+	if err != nil {
+		notFoundOrError(w, err, "material", id)
 		return
 	}
-	services.Ok(w, material)
+	services.Ok(w, m)
 }
 
-// POST /material  →  201 | 400
+// POST /material  →  201 | 400 | 409
 func (h *MaterialHandler) CreandoMaterial(w http.ResponseWriter, r *http.Request) {
 	var in models.EntradaMaterial
 	if !services.DecodificarJSON(w, r, &in) {
@@ -50,12 +49,12 @@ func (h *MaterialHandler) CreandoMaterial(w http.ResponseWriter, r *http.Request
 		services.MalFormado(w, err.Error())
 		return
 	}
-	mat, err := h.s.CrearMateriales(in)
+	m, err := h.svc.CrearM(in)
 	if err != nil {
 		services.ErrorMermoria(w, err, "material", 0)
 		return
 	}
-	services.Creando(w, mat, mat.ID)
+	services.Creando(w, m, m.ID)
 }
 
 // PUT /material/{id}  →  200 | 400 | 404
@@ -72,12 +71,12 @@ func (h *MaterialHandler) ActulizarUnMaterial(w http.ResponseWriter, r *http.Req
 		services.MalFormado(w, err.Error())
 		return
 	}
-	mat, ok := h.s.ActualizarMateriales(id, in)
-	if !ok {
-		services.NoEncontrado(w, "material", id)
+	m, err := h.svc.ActualizarM(id, in)
+	if err != nil {
+		notFoundOrError(w, err, "material", id)
 		return
 	}
-	services.Ok(w, mat)
+	services.Ok(w, m)
 }
 
 // DELETE /material/{id}  →  204 | 404
@@ -86,8 +85,8 @@ func (h *MaterialHandler) BorrarUnMaterial(w http.ResponseWriter, r *http.Reques
 	if !valid {
 		return
 	}
-	if !h.s.EliminarMateriales(id) {
-		services.NoEncontrado(w, "material", id)
+	if err := h.svc.EliminarM(id); err != nil {
+		notFoundOrError(w, err, "material", id)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -98,16 +97,16 @@ func (h *MaterialHandler) BorrarUnMaterial(w http.ResponseWriter, r *http.Reques
 // ─────────────────────────────────────────────
 
 type ManoObraHandler struct {
-	s *storage.Storage
+	svc *services.ManoObraServise
 }
 
-func NewManoObraHandler(s *storage.Storage) *ManoObraHandler {
-	return &ManoObraHandler{s}
+func NewManoObraHandler(svc *services.ManoObraServise) *ManoObraHandler {
+	return &ManoObraHandler{svc: svc}
 }
 
 // GET /manoobra  →  200
 func (h *ManoObraHandler) ListarUnaManoObra(w http.ResponseWriter, r *http.Request) {
-	services.Ok(w, h.s.ListarManoObra())
+	services.Ok(w, h.svc.ListadoMa())
 }
 
 // GET /manoobra/{id}  →  200 | 404
@@ -116,12 +115,12 @@ func (h *ManoObraHandler) ObtenerUnaManoObraPorID(w http.ResponseWriter, r *http
 	if !valid {
 		return
 	}
-	mo, ok := h.s.ObtenerManoObra(id)
-	if !ok {
-		services.NoEncontrado(w, "mano_obra", id)
+	m, err := h.svc.ObtenerMa(id)
+	if err != nil {
+		notFoundOrError(w, err, "mano_obra", id)
 		return
 	}
-	services.Ok(w, mo)
+	services.Ok(w, m)
 }
 
 // POST /manoobra  →  201 | 400
@@ -134,12 +133,12 @@ func (h *ManoObraHandler) CreandoUnaManoObra(w http.ResponseWriter, r *http.Requ
 		services.MalFormado(w, err.Error())
 		return
 	}
-	mo, err := h.s.CrearManoObra(in)
+	m, err := h.svc.CrearMa(in)
 	if err != nil {
 		services.ErrorMermoria(w, err, "mano_obra", 0)
 		return
 	}
-	services.Creando(w, mo, mo.ID)
+	services.Creando(w, m, m.ID)
 }
 
 // PUT /manoobra/{id}  →  200 | 400 | 404
@@ -156,12 +155,12 @@ func (h *ManoObraHandler) ActualizadoUnaManoObra(w http.ResponseWriter, r *http.
 		services.MalFormado(w, err.Error())
 		return
 	}
-	mo, ok := h.s.ActualizarManoObra(id, in)
-	if !ok {
-		services.NoEncontrado(w, "mano_obra", id)
+	m, err := h.svc.ActualizarMa(id, in)
+	if err != nil {
+		notFoundOrError(w, err, "mano_obra", id)
 		return
 	}
-	services.Ok(w, mo)
+	services.Ok(w, m)
 }
 
 // DELETE /manoobra/{id}  →  204 | 404
@@ -170,7 +169,7 @@ func (h *ManoObraHandler) BorrandoUnaManoObra(w http.ResponseWriter, r *http.Req
 	if !valid {
 		return
 	}
-	if !h.s.EliminarManoObra(id) {
+	if !h.svc.EliminarMa(id) {
 		services.NoEncontrado(w, "mano_obra", id)
 		return
 	}
@@ -182,16 +181,16 @@ func (h *ManoObraHandler) BorrandoUnaManoObra(w http.ResponseWriter, r *http.Req
 // ─────────────────────────────────────────────
 
 type EquipoHandler struct {
-	s *storage.Storage
+	svc *services.EquipoService
 }
 
-func NewEquipoHandler(s *storage.Storage) *EquipoHandler {
-	return &EquipoHandler{s}
+func NewEquipoHandler(svc *services.EquipoService) *EquipoHandler {
+	return &EquipoHandler{svc: svc}
 }
 
 // GET /equipo  →  200
 func (h *EquipoHandler) ListandoLosEquipos(w http.ResponseWriter, r *http.Request) {
-	services.Ok(w, h.s.ListarEquipos())
+	services.Ok(w, h.svc.ListadoE())
 }
 
 // GET /equipo/{id}  →  200 | 404
@@ -200,12 +199,12 @@ func (h *EquipoHandler) ObtenerUnEquipoPorID(w http.ResponseWriter, r *http.Requ
 	if !valid {
 		return
 	}
-	eq, err := h.s.ObtenerEquipo(id)
+	e, err := h.svc.ObtenerE(id)
 	if err != nil {
-		services.ErrorMermoria(w, err, "equipo", id)
+		notFoundOrError(w, err, "equipo", id)
 		return
 	}
-	services.Ok(w, eq)
+	services.Ok(w, e)
 }
 
 // POST /equipo  →  201 | 400
@@ -218,12 +217,12 @@ func (h *EquipoHandler) CrearUnEquipo(w http.ResponseWriter, r *http.Request) {
 		services.MalFormado(w, err.Error())
 		return
 	}
-	eq, err := h.s.CrearEquipo(in)
+	e, err := h.svc.CrearE(in)
 	if err != nil {
 		services.ErrorMermoria(w, err, "equipo", 0)
 		return
 	}
-	services.Creando(w, eq, eq.ID)
+	services.Creando(w, e, e.ID)
 }
 
 // PUT /equipo/{id}  →  200 | 400 | 404
@@ -240,12 +239,12 @@ func (h *EquipoHandler) ActualizarUnEquipo(w http.ResponseWriter, r *http.Reques
 		services.MalFormado(w, err.Error())
 		return
 	}
-	eq, err := h.s.ActualizarEquipo(id, in)
+	e, err := h.svc.ActualizarE(id, in)
 	if err != nil {
-		services.ErrorMermoria(w, err, "equipo", id)
+		notFoundOrError(w, err, "equipo", id)
 		return
 	}
-	services.Ok(w, eq)
+	services.Ok(w, e)
 }
 
 // DELETE /equipo/{id}  →  204 | 404
@@ -254,8 +253,8 @@ func (h *EquipoHandler) BorrarUnEquipo(w http.ResponseWriter, r *http.Request) {
 	if !valid {
 		return
 	}
-	if err := h.s.EliminarEquipo(id); err != nil {
-		services.ErrorMermoria(w, err, "equipo", id)
+	if err := h.svc.EliminarE(id); err != nil {
+		notFoundOrError(w, err, "equipo", id)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -266,14 +265,16 @@ func (h *EquipoHandler) BorrarUnEquipo(w http.ResponseWriter, r *http.Request) {
 // ─────────────────────────────────────────────
 
 type PrecioHandler struct {
-	s *storage.Storage
+	svc *services.PreciosService
 }
 
-func NewPrecioHandler(s *storage.Storage) *PrecioHandler { return &PrecioHandler{s} }
+func NewPrecioHandler(svc *services.PreciosService) *PrecioHandler {
+	return &PrecioHandler{svc: svc}
+}
 
 // GET /precio  →  200
 func (h *PrecioHandler) ListarDeLosPrecios(w http.ResponseWriter, r *http.Request) {
-	services.Ok(w, h.s.ListarPrecios())
+	services.Ok(w, h.svc.ListarPr())
 }
 
 // POST /precio  →  201 | 400
@@ -286,9 +287,9 @@ func (h *PrecioHandler) CrearUnPrecio(w http.ResponseWriter, r *http.Request) {
 		services.MalFormado(w, err.Error())
 		return
 	}
-	p, err := h.s.CrearPrecio(in)
+	p, err := h.svc.CrearPr(in)
 	if err != nil {
-		services.ErrorMermoria(w, err, in.RecursoTipo, in.RecursoID)
+		services.ErrorMermoria(w, err, "precio", 0)
 		return
 	}
 	services.Creando(w, p, p.ID)
@@ -300,7 +301,7 @@ func (h *PrecioHandler) HistorialPorRecurso(w http.ResponseWriter, r *http.Reque
 	if !valid {
 		return
 	}
-	services.Ok(w, h.s.HistorialPrecios(tipo, recursoID))
+	services.Ok(w, h.svc.HistorialPr(tipo, recursoID))
 }
 
 // GET /precio/{tipo}/{recursoID}/vigente  →  200 | 404
@@ -309,7 +310,7 @@ func (h *PrecioHandler) PrecioVigentePorRecurso(w http.ResponseWriter, r *http.R
 	if !valid {
 		return
 	}
-	p, err := h.s.PrecioVigente(tipo, recursoID)
+	p, err := h.svc.PrecioVigentePr(tipo, recursoID)
 	if err != nil {
 		services.ErrorMermoria(w, err, "precio vigente", recursoID)
 		return
@@ -323,9 +324,9 @@ func (h *PrecioHandler) ObtenerUnPrecioPorID(w http.ResponseWriter, r *http.Requ
 	if !valid {
 		return
 	}
-	p, err := h.s.ObtenerPrecio(id)
+	p, err := h.svc.ObtenerPr(id)
 	if err != nil {
-		services.ErrorMermoria(w, err, "precio", id)
+		notFoundOrError(w, err, "precio", id)
 		return
 	}
 	services.Ok(w, p)
@@ -345,9 +346,9 @@ func (h *PrecioHandler) ActualizarUnPrecio(w http.ResponseWriter, r *http.Reques
 		services.MalFormado(w, err.Error())
 		return
 	}
-	p, err := h.s.ActualizarPrecio(id, in)
+	p, err := h.svc.ActualizarPr(id, in)
 	if err != nil {
-		services.ErrorMermoria(w, err, "precio", id)
+		notFoundOrError(w, err, "precio", id)
 		return
 	}
 	services.Ok(w, p)
@@ -359,9 +360,21 @@ func (h *PrecioHandler) BorrarUnPrecio(w http.ResponseWriter, r *http.Request) {
 	if !valid {
 		return
 	}
-	if err := h.s.EliminarPrecio(id); err != nil {
-		services.ErrorMermoria(w, err, "precio", id)
+	if err := h.svc.EliminarPr(id); err != nil {
+		notFoundOrError(w, err, "precio", id)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// ─────────────────────────────────────────────
+// helper
+// ─────────────────────────────────────────────
+
+func notFoundOrError(w http.ResponseWriter, err error, recurso string, id int) {
+	if errors.Is(err, services.ErrNoEncontrado) {
+		services.NoEncontrado(w, recurso, id)
+		return
+	}
+	services.ErrorMermoria(w, err, recurso, id)
 }

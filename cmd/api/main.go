@@ -13,6 +13,7 @@ import (
 	"Sistem-Inte-Gestion-Control-Obras/internal/handlers"
 	"Sistem-Inte-Gestion-Control-Obras/internal/httpserver"
 	"Sistem-Inte-Gestion-Control-Obras/internal/middleware"
+	"Sistem-Inte-Gestion-Control-Obras/internal/routes"
 	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
 
@@ -21,6 +22,7 @@ import (
 )
 
 func main() {
+<<<<<<< HEAD
 	// 1. Inicializar almacenamiento
 
 	cfg := config.Cargar()
@@ -52,41 +54,50 @@ func run(cfg config.Config) error {
 	})
 
 	// 4. Router
+=======
+	cfg := config.Cargar()
+	if err := run(cfg); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(cfg config.Config) error {
+	recursos := storage.New()
+
+	materialsvc := services.NewMaterialService(recursos)
+	manoobraSvc := services.NewManoObraService(recursos)
+	equiposvc := services.NewEquipoService(recursos)
+	preciosSvc := services.NewPreciosService(recursos)
+	authSvc := services.NuevaAutenticacionService(recursos, services.AuthOptions{
+		Secreto:  cfg.JWTSecreto,
+		Duracion: cfg.JWTDuracion,
+	})
+
+	serverC := handlers.NewServerC(manoobraSvc, materialsvc, equiposvc, preciosSvc, authSvc)
+
+	mh := handlers.NewMaterialHandler(materialsvc)
+	mob := handlers.NewManoObraHandler(manoobraSvc)
+	eh := handlers.NewEquipoHandler(equiposvc)
+	ph := handlers.NewPrecioHandler(preciosSvc)
+
+>>>>>>> Modulo1/Catalogo
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
 	r.Use(middleware.CORS)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(" Sistem-Inte-Gestion-Control-Obras/internal/routes - Servidor funcionando correctamente"))
+		w.Write([]byte("API Gestión de Obras e Incidencias - Funcionando"))
 	})
-
-	s := storage.New()
-	s.Seed()
-
-	mh := handlers.NewMaterialHandler(s)
-	mob := handlers.NewManoObraHandler(s)
-	eh := handlers.NewEquipoHandler(s)
-	ph := handlers.NewPrecioHandler(s)
-
-	authService := services.NuevaAutenticacionService(s)
-	serverC := handlers.NewServerC(
-		services.NewManoObraService(s),
-		services.NewMaterialService(s),
-		services.NewEquipoService(s),
-		services.NewPreciosService(s),
-		authService,
-	)
 
 	r.Post("/api/v1/usuarios/registrar", serverC.RegistrarUser)
 
 	r.Route("/api/v1/auth", func(r chi.Router) {
 		r.Post("/login", serverC.LoginUser)
 	})
-	r.Post("/api/v1/usuarios/login", serverC.LoginUser)
 
 	r.Route("/api/v1/catalogo", func(r chi.Router) {
-		r.Use(middleware.AuthJWT(authService))
+		r.Use(middleware.AuthJWT(authSvc))
 
 		r.Get("/material", mh.ListandoMateriales)
 		r.Get("/material/{id}", mh.ObtenerMaterialPorID)
@@ -115,6 +126,7 @@ func run(cfg config.Config) error {
 		r.Delete("/precio/{id}", ph.BorrarUnPrecio)
 	})
 
+<<<<<<< HEAD
 	// Modulo 3
 	// Rutas
 	r.Route("/api/v1", func(r chi.Router) {
@@ -146,6 +158,10 @@ func run(cfg config.Config) error {
 	})
 
 	// 5. Servidor HTTP
+=======
+	routes.RegisterRoutes(r, authSvc)
+
+>>>>>>> Modulo1/Catalogo
 	srv := httpserver.Nuevo(
 		r,
 		httpserver.ConPuerto(cfg.Puerto),
@@ -153,7 +169,10 @@ func run(cfg config.Config) error {
 		httpserver.ConWriteTimeout(cfg.WriteTimeout),
 	)
 
+<<<<<<< HEAD
 	// 6. Graceful Shutdown
+=======
+>>>>>>> Modulo1/Catalogo
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -169,6 +188,7 @@ func run(cfg config.Config) error {
 	case err := <-errServidor:
 		return err
 	case <-ctx.Done():
+<<<<<<< HEAD
 		log.Println("Señal de apagado recibida, cerrando...")
 	}
 
@@ -181,4 +201,16 @@ func run(cfg config.Config) error {
 	log.Println("Servidor detenido limpiamente.")
 	return nil
 
+=======
+		log.Println("Senal de apagado recibida, cerrando ordenadamente...")
+	}
+
+	ctxApagado, cancelar := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelar()
+	if err := srv.Shutdown(ctxApagado); err != nil {
+		return err
+	}
+	log.Println("Servidor detenido limpiamente.")
+	return nil
+>>>>>>> Modulo1/Catalogo
 }
