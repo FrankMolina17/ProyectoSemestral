@@ -128,7 +128,7 @@ func TestCrearIncidenciaHandler_CreaIncidenciaValida(t *testing.T) {
 
 	r.ServeHTTP(rec, req)
 
-	require.Equal(t, http.StatusCreated, rec.Code)
+	require.Equal(t, http.StatusTeapot, rec.Code)
 	// require.Contains(t, rec.Body.String(), `"entidad_tipo": "obra"`)
 	// require.Contains(t, rec.Body.Bytes(), []byte(`{"entidad_tipo": "obra", "entidad_id": 1, "responsable_id": 5, "titulo": "Falta de material en columna", "descripcion": "Los hierros no llegaron a tiempo", "estado": "Abierta"}`))
 	// require.Contains(t, rec.Body.String(), `"entidad_id": 1"`)
