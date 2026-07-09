@@ -11,10 +11,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var secretoJWT = []byte("proformas-2026-secret")
-var duracionToken = time.Hour * 24
+var secretoJWTProforma = []byte("proformas-2026-secret")
+var duracionTokenProforma = time.Hour * 24
 
-type Claims struct {
+type ClaimsProforma struct {
 	UsuarioID int `json:"uid"`
 	jwt.RegisteredClaims
 }
@@ -54,44 +54,44 @@ func (s *AuthService) Login(email, password string) (string, error) {
 
 	u, existe := s.repo.BuscarPorEmail(email)
 	if !existe {
-		return "", ErrCredencialesInvalidos
+		return "", ErrCredencialesInvalidas
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)); err != nil {
-		return "", ErrCredencialesInvalidos
+		return "", ErrCredencialesInvalidas
 	}
 
 	return s.generarToken(u)
 }
 
 func (s *AuthService) generarToken(u models.Usuario) (string, error) {
-	claims := Claims{
+	claims := ClaimsProforma{
 		UsuarioID: u.ID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duracionToken)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duracionTokenProforma)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(secretoJWT)
+	return token.SignedString(secretoJWTProforma)
 }
 
 func (s *AuthService) VerificarToken(tokenStr string) (int, error) {
-	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (any, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &ClaimsProforma{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, ErrCredencialesInvalidos
+			return nil, ErrCredencialesInvalidas
 		}
-		return secretoJWT, nil
+		return secretoJWTProforma, nil
 	})
 
 	if err != nil || !token.Valid {
-		return 0, ErrCredencialesInvalidos
+		return 0, ErrCredencialesInvalidas
 	}
 
-	claims, ok := token.Claims.(*Claims)
+	claims, ok := token.Claims.(*ClaimsProforma)
 	if !ok {
-		return 0, ErrCredencialesInvalidos
+		return 0, ErrCredencialesInvalidas
 	}
 
 	return claims.UsuarioID, nil

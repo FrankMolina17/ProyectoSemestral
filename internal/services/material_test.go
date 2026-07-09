@@ -1,12 +1,18 @@
 package services
 
 import (
+
 	"testing"
+	
 
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 
 	"github.com/stretchr/testify/assert"
 )
+
+// ─────────────────────────────────────────────
+// MATERIAL (ya existente)
+// ─────────────────────────────────────────────
 
 type mockMaterialRepo struct {
 	crearCalled bool
@@ -33,7 +39,7 @@ func (m *mockMaterialRepo) EliminarMateriales(id int) bool {
 	return false
 }
 
-//TestCrearMaterial_RechazaDatoInvalido_NoLlamaAlRepositorio verifica que el servicio no llame al repositorio cuando los datos son inválidos.
+// TestCrearMaterial_RechazaDatoInvalido_NoLlamaAlRepositorio verifica que el servicio no llame al repositorio cuando los datos son inválidos.
 func TestCrearMaterial_RechazaDatoInvalido_NoLlamaAlRepositorio(t *testing.T) {
 	casos := []struct {
 		nombre string
@@ -103,3 +109,7 @@ func TestCrearMaterial_DatoValido_LlamaAlRepositorio(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, mock.crearCalled, "CrearMateriales debe ser llamado cuando la entrada es valida")
 }
+
+
+
+

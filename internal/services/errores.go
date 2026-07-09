@@ -16,6 +16,8 @@ import (
 )
 
 var (
+	ErrEmailVacio                = errors.New("email y password son requeridos")
+	ErrRecursoNoEncontrado       = errors.New("recurso no encontrado")
 	ErrNombreVacio               = errors.New("el campo es obligatorio")
 	ErrUnidadVacia               = errors.New("el campo unidad es obligatorio")
 	ErrDescripcionVacia          = errors.New("el campo descripcion es obligatorio")

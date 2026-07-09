@@ -27,12 +27,27 @@ type Claims struct {
 }
 
 type AutenticacionService struct {
-	repo storage.UsuarioRepository
+	repo       storage.UsuarioRepository
+	secretJwt  []byte
+	duracionJwt time.Duration
 }
 
-func NuevaAutenticacionService(repo storage.UsuarioRepository) *AutenticacionService {
+type AuthOptions struct {
+	Secreto  []byte
+	Duracion time.Duration
+}
+
+func NuevaAutenticacionService(repo storage.UsuarioRepository, opts AuthOptions) *AutenticacionService {
+	if len(opts.Secreto) == 0 {
+		opts.Secreto = []byte("secreto")
+	}
+	if opts.Duracion <= 0 {
+		opts.Duracion = time.Hour * 24
+	}
 	return &AutenticacionService{
-		repo: repo,
+		repo:        repo,
+		secretJwt:   opts.Secreto,
+		duracionJwt: opts.Duracion,
 	}
 }
 
@@ -83,12 +98,12 @@ func (s *AutenticacionService) GenerarJWT(usuario models.Usuario) (string, error
 		UsuarioID: usuario.ID,
 		Email:     usuario.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(DuracionJWT)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.duracionJwt)),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString(secretJwt)
+	return token.SignedString(s.secretJwt)
 }
 
 // validar Token
@@ -97,7 +112,7 @@ func (s *AutenticacionService) ValidarJWT(tokenStr string) (*Claims, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrCredencialesInvalidas
 		}
-		return secretJwt, nil
+		return s.secretJwt, nil
 	})
 	if err != nil || !tok.Valid {
 		return nil, ErrCredencialesInvalidas

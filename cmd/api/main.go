@@ -1,12 +1,18 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
+	"Sistem-Inte-Gestion-Control-Obras/internal/config"
 	"Sistem-Inte-Gestion-Control-Obras/internal/handlers"
+	"Sistem-Inte-Gestion-Control-Obras/internal/httpserver"
 	"Sistem-Inte-Gestion-Control-Obras/internal/middleware"
 	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
@@ -16,71 +22,76 @@ import (
 )
 
 func main() {
-	// ── Configuración común ──
+	cfg := config.Cargar()
+	if err := run(cfg); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run(cfg config.Config) error {
+	// ── Módulo 1 — Catálogo ──
+	recursos, err := storage.Inicializar(cfg.RutaDB)
+	if err != nil {
+		return err
+	}
+	defer recursos.Cerrar()
+
+	materialSvc := services.NewMaterialService(recursos.Almacen)
+	manoObraSvc := services.NewManoObraService(recursos.Almacen)
+	equipoSvc := services.NewEquipoService(recursos.Almacen)
+	precioSvc := services.NewPreciosService(recursos.Almacen)
+	authSvc := services.NuevaAutenticacionService(recursos.Usuarios, services.AuthOptions{
+		Secreto:  cfg.JWTSecreto,
+		Duracion: cfg.JWTDuracion,
+	})
+
+	serverC := handlers.NewServerC(manoObraSvc, materialSvc, equipoSvc, precioSvc, authSvc)
+
+	mh := handlers.NewMaterialHandler(materialSvc)
+	mob := handlers.NewManoObraHandler(manoObraSvc)
+	eh := handlers.NewEquipoHandler(equipoSvc)
+	ph := handlers.NewPrecioHandler(precioSvc)
+
+	// ── Módulo 2 — Proformas ──
+	dsn := os.Getenv("DB_DSN")
+	if dsn == "" {
+		dsn = "proforma.db"
+	}
+
+	recursos2, err := storage.InicializarModulo2(dsn)
+	if err != nil {
+		return err
+	}
+	defer recursos2.Cerrar()
+
+	proformaService := services.NuevoProformaService(recursos2.ProformaRepo)
+	authServiceProforma := services.NuevoAuthService(recursos2.UsuarioStore)
+
+	proformaHandler := handlers.NuevoHandler(proformaService)
+	authHandler := handlers.NuevoAuthHandler(authServiceProforma)
+
+	// ── Router ──
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
 	r.Use(middleware.CORS)
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Sistema de Gestión y Control de Obras - API funcionando"))
+		w.Write([]byte("API Gesti\u00f3n de Obras e Incidencias - Funcionando"))
 	})
 
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"estado":"ok"}`))
+	// Auth Catálogo
+	r.Route("/api/v1/auth", func(r chi.Router) {
+		r.Post("/login", serverC.LoginUser)
 	})
 
-	// ========================================
-	// MÓDULO 1 - CATÁLOGO
-	// ========================================
-	catalogoStorage := storage.NuevoCatalogoStorage()
-	catalogoStorage.Seed()
-
-	materialSvc := services.NuevoMaterialService(catalogoStorage)
-	manoObraSvc := services.NuevoManoObraService(catalogoStorage)
-	equipoSvc := services.NuevoEquipoService(catalogoStorage)
-	precioSvc := services.NuevoPreciosService(catalogoStorage)
-
-	mh := handlers.NuevoMaterialHandler(materialSvc)
-	mob := handlers.NuevoManoObraHandler(manoObraSvc)
-	eh := handlers.NuevoEquipoHandler(equipoSvc)
-	ph := handlers.NuevoPrecioHandler(precioSvc)
-
-	authServiceCatalogo := services.NuevaAutenticacionService(catalogoStorage)
-
-	// ========================================
-	// MÓDULO 2 - PROFORMAS (tu módulo)
-	// ========================================
-	dsn := os.Getenv("DB_DSN")
-	if dsn == "" {
-		dsn = "proforma.db"
-	}
-
-	recursos, err := storage.InicializarModulo2(dsn)
-	if err != nil {
-		log.Fatalf("error inicializando módulo 2: %v", err)
-	}
-	defer recursos.Cerrar()
-
-	proformaService := services.NuevoProformaService(recursos.ProformaRepo)
-	authServiceProforma := services.NuevoAuthService(recursos.UsuarioStore)
-
-	proformaHandler := handlers.NuevoHandler(proformaService)
-	authHandler := handlers.NuevoAuthHandler(authServiceProforma)
-
-	// ========================================
-	// RUTAS
-	// ========================================
-
-	// Auth común
-	r.Post("/api/v1/usuarios/registrar", authHandler.Registrar) // o serverC.RegistrarUser si prefieres
+	// Auth Proformas
+	r.Post("/api/v1/auth/register", authHandler.Registrar)
 	r.Post("/api/v1/auth/login", authHandler.Login)
 
-	// Rutas Catálogo (Módulo 1)
+	// ── Rutas Catálogo ──
 	r.Route("/api/v1/catalogo", func(r chi.Router) {
-		r.Use(middleware.AuthJWT(authServiceCatalogo))
+		r.Use(middleware.AuthJWT(authSvc))
 
 		r.Get("/material", mh.ListandoMateriales)
 		r.Get("/material/{id}", mh.ObtenerMaterialPorID)
@@ -109,7 +120,7 @@ func main() {
 		r.Delete("/precio/{id}", ph.BorrarUnPrecio)
 	})
 
-	// Rutas Proformas (Módulo 2)
+	// ── Rutas Proformas ──
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.VerificarJWT(authServiceProforma))
 
@@ -136,12 +147,46 @@ func main() {
 		})
 	})
 
-	// Iniciar servidor
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	// ── Incidencias (desde routes.go) ──
+	r.Route("/api/v1/incidencias", func(r chi.Router) {
+		r.Post("/", handlers.CrearIncidenciaHandler)
+		r.Get("/", handlers.ObtenerIncidenciasHandler)
+		r.Get("/{id}", handlers.ObtenerIncidenciaPorIDHandler)
+		r.Get("/por/{tipo}/{id}", handlers.ObtenerIncidenciasPorEntidadHandler)
+		r.Put("/{id}", handlers.ActualizarIncidenciaHandler)
+	})
+
+	// ── Servidor HTTP ──
+	srv := httpserver.Nuevo(
+		r,
+		httpserver.ConPuerto(cfg.Puerto),
+		httpserver.ConReadTimeout(cfg.ReadTimeout),
+		httpserver.ConWriteTimeout(cfg.WriteTimeout),
+	)
+
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	errServidor := make(chan error, 1)
+	go func() {
+		log.Printf("Servidor escuchando en http://localhost%s", cfg.Puerto)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			errServidor <- err
+		}
+	}()
+
+	select {
+	case err := <-errServidor:
+		return err
+	case <-ctx.Done():
+		log.Println("Se\u00f1al de apagado recibida, cerrando ordenadamente...")
 	}
-	addr := fmt.Sprintf(":%s", port)
-	log.Printf("API escuchando en http://localhost%s", addr)
-	log.Fatal(http.ListenAndServe(addr, r))
+
+	ctxApagado, cancelar := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelar()
+	if err := srv.Shutdown(ctxApagado); err != nil {
+		return err
+	}
+	log.Println("Servidor detenido limpiamente.")
+	return nil
 }

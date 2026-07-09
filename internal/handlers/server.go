@@ -21,3 +21,21 @@ func NewServerC(manoObra *services.ManoObraServise, material *services.MaterialS
 		Autenticacion: autenticacion,
 	}
 }
+
+type Deps struct{
+	ManoObra *services.ManoObraServise
+	Material *services.MaterialService
+	Equipos *services.EquipoService
+	Precios *services.PreciosService
+	Autenticacion *services.AutenticacionService
+}
+
+func NewServer (d Deps) *ServerC{
+	return &ServerC{
+		ManoObra: d.ManoObra,
+		Material: d.Material,
+		Equipos: d.Equipos,
+		Precios: d.Precios,
+		Autenticacion: d.Autenticacion,
+	}
+}

@@ -15,13 +15,13 @@ func NuevoAuthHandler(s *services.AuthService) *AuthHandler {
 	return &AuthHandler{service: s}
 }
 
-type credenciales struct {
+type credencialesProforma struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 func (h *AuthHandler) Registrar(w http.ResponseWriter, r *http.Request) {
-	var creds credenciales
+	var creds credencialesProforma
 
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		responderJSON(w, http.StatusBadRequest, map[string]string{
@@ -46,7 +46,7 @@ func (h *AuthHandler) Registrar(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var creds credenciales
+	var creds credencialesProforma
 
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
 		responderJSON(w, http.StatusBadRequest, map[string]string{

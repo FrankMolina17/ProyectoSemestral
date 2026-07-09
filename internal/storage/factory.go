@@ -12,7 +12,25 @@ import (
 	"gorm.io/gorm"
 )
 
-// RecursosModulo2 agrupa todo lo que el módulo 2 necesita para funcionar.
+type Recursos struct {
+	Almacen      *Storage
+	Usuarios     *Storage
+	BackendUsado string
+	Cerrar       func() error
+}
+
+func Inicializar(rutaDB string) (*Recursos, error) {
+	_ = rutaDB
+	almacen := New()
+	cerrar := func() error { return nil }
+	return &Recursos{
+		Almacen:      almacen,
+		Usuarios:     almacen,
+		BackendUsado: "memoria",
+		Cerrar:       cerrar,
+	}, nil
+}
+
 type RecursosModulo2 struct {
 	ProformaRepo  repository.ProformaRepository
 	UsuarioStore  *UsuarioStorage
@@ -20,16 +38,8 @@ type RecursosModulo2 struct {
 	BackendUsado  string
 }
 
-// InicializarModulo2 centraliza el plumbing del módulo 2:
-//  1. Abre GORM según el driver configurado (SQLite o PostgreSQL).
-//  2. Ejecuta AutoMigrate para crear/actualizar las tablas.
-//  3. Crea el repositorio de proformas.
-//  4. Crea el storage de usuarios en memoria.
-//  5. Expone una función Cerrar para el graceful shutdown.
 func InicializarModulo2(dsn string) (*RecursosModulo2, error) {
 	driver := os.Getenv("DB_DRIVER")
-
-	// 1. Abrir GORM según el driver
 	var db *gorm.DB
 	var err error
 	backendUsado := "sqlite"
@@ -46,7 +56,6 @@ func InicializarModulo2(dsn string) (*RecursosModulo2, error) {
 		return nil, fmt.Errorf("abrir base de datos: %w", err)
 	}
 
-	// 2. AutoMigrate — GORM es el dueño del esquema
 	if err := db.AutoMigrate(
 		&models.Proforma{},
 		&models.ProformaItem{},
@@ -56,13 +65,9 @@ func InicializarModulo2(dsn string) (*RecursosModulo2, error) {
 		return nil, fmt.Errorf("AutoMigrate: %w", err)
 	}
 
-	// 3. Repositorio de proformas
 	proformaRepo := repository.NuevoProformaRepository(db)
-
-	// 4. Storage de usuarios (siempre en memoria)
 	usuarioStore := NuevoUsuarioStorage()
 
-	// 5. Cierre ordenado
 	cerrar := func() error {
 		sqlDB, err := db.DB()
 		if err != nil {
