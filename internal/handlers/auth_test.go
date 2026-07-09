@@ -24,6 +24,8 @@ func setupAuthRouter() (chi.Router, *services.AutenticacionService, *storage.Sto
 	r := chi.NewRouter()
 	r.Post("/api/v1/auth/register", srv.RegistrarUser)
 	r.Post("/api/v1/auth/login", srv.LoginUser)
+	r.Get("/api/v1/auth/usuarios", srv.ListarUsuarios)
+	r.Get("/api/v1/auth/usuarios/{id}", srv.ObtenerUsuarioPorID)
 
 	return r, authSvc, fakeStorage
 }
@@ -81,5 +83,43 @@ func TestLogin(t *testing.T) {
 		malo := `{"email":"ana@uleam.edu.ec","password":"incorrecta"}`
 		rec := ejecutar(h, jsonReq(http.MethodPost, "/api/v1/auth/login", malo, ""))
 		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
+}
+
+func TestListarUsuarios(t *testing.T) {
+	h, _, _ := setupAuthRouter()
+
+	// Register 2 users
+	ejecutar(h, jsonReq(http.MethodPost, "/api/v1/auth/register", `{"email":"u1@test.com","password":"123456"}`, ""))
+	ejecutar(h, jsonReq(http.MethodPost, "/api/v1/auth/register", `{"email":"u2@test.com","password":"123456"}`, ""))
+
+	rec := ejecutar(h, jsonReq(http.MethodGet, "/api/v1/auth/usuarios", "", ""))
+	require.Equal(t, http.StatusOK, rec.Code)
+
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	data, ok := resp["data"].([]interface{})
+	require.True(t, ok)
+	assert.Len(t, data, 2)
+}
+
+func TestObtenerUsuarioPorID(t *testing.T) {
+	h, _, _ := setupAuthRouter()
+
+	ejecutar(h, jsonReq(http.MethodPost, "/api/v1/auth/register", `{"email":"user@test.com","password":"123456"}`, ""))
+
+	t.Run("existente -> 200", func(t *testing.T) {
+		rec := ejecutar(h, jsonReq(http.MethodGet, "/api/v1/auth/usuarios/1", "", ""))
+		assert.Equal(t, http.StatusOK, rec.Code)
+	})
+
+	t.Run("inexistente -> 404", func(t *testing.T) {
+		rec := ejecutar(h, jsonReq(http.MethodGet, "/api/v1/auth/usuarios/999", "", ""))
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+	})
+
+	t.Run("id invalido -> 400", func(t *testing.T) {
+		rec := ejecutar(h, jsonReq(http.MethodGet, "/api/v1/auth/usuarios/abc", "", ""))
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
 	})
 }

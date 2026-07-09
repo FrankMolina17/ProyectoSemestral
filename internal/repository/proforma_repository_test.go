@@ -8,32 +8,119 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-) 
+)
 
-// TestProformaRepository_CrearYObtenerTodos usa GORM con sqlite :memory:
-// y verifica que crear una proforma se refleje al listar.
-func TestProformaRepository_CrearYObtenerTodos(t *testing.T) {
+func setupRepo(t *testing.T) repository.ProformaRepository {
+	t.Helper()
 	db, err := repository.NuevaConexion("file::memory:?cache=shared")
 	require.NoError(t, err)
+	return repository.NuevoProformaRepository(db)
+}
 
-	repo := repository.NuevoProformaRepository(db)
+func TestProformaRepository_Actualizar(t *testing.T) {
+	repo := setupRepo(t)
 
-	creada, err := repo.CrearProforma(models.Proforma{
-		Nombre: "Proforma puente vehicular",
-		ObraID: 42,
+	creada, err := repo.CrearProforma(models.Proforma{Nombre: "Original", ObraID: 1})
+	require.NoError(t, err)
+
+	act, err := repo.ActualizarProforma(creada.ID, models.Proforma{Nombre: "Actualizado", PctGanancia: 0.15})
+	require.NoError(t, err)
+	assert.Equal(t, "Actualizado", act.Nombre)
+	assert.Equal(t, 0.15, act.PctGanancia)
+
+	_, err = repo.ActualizarProforma(999, models.Proforma{Nombre: "Nope"})
+	assert.Error(t, err)
+}
+
+func TestProformaRepository_Eliminar(t *testing.T) {
+	repo := setupRepo(t)
+
+	creada, err := repo.CrearProforma(models.Proforma{Nombre: "Para borrar", ObraID: 1})
+	require.NoError(t, err)
+
+	assert.NoError(t, repo.EliminarProforma(creada.ID))
+	assert.Error(t, repo.EliminarProforma(creada.ID))
+
+	_, err = repo.ObtenerPorID(creada.ID)
+	assert.Error(t, err)
+}
+
+func TestProformaRepository_Aprobar(t *testing.T) {
+	repo := setupRepo(t)
+
+	creada, err := repo.CrearProforma(models.Proforma{Nombre: "Proforma", ObraID: 1})
+	require.NoError(t, err)
+
+	aprobada, err := repo.AprobarProforma(creada.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "aprobada", aprobada.Estado)
+
+	_, err = repo.AprobarProforma(999)
+	assert.Error(t, err)
+}
+
+func TestProformaRepository_Items(t *testing.T) {
+	repo := setupRepo(t)
+
+	proforma, err := repo.CrearProforma(models.Proforma{Nombre: "Con items", ObraID: 1})
+	require.NoError(t, err)
+
+	item, err := repo.AgregarItem(models.ProformaItem{
+		ProformaID:     proforma.ID,
+		TipoRecurso:    "material",
+		Descripcion:    "Cemento",
+		Cantidad:       10,
+		PrecioPromedio: 12.50,
+		Subtotal:       125.0,
 	})
 	require.NoError(t, err)
-	require.NotZero(t, creada.ID)
-	assert.Equal(t, "borrador", creada.Estado)
+	assert.Greater(t, item.ID, 0)
 
-	lista, err := repo.ObtenerTodos()
+	items, err := repo.ObtenerItems(proforma.ID)
 	require.NoError(t, err)
-	require.Len(t, lista, 1)
-	assert.Equal(t, creada.ID, lista[0].ID)
-	assert.Equal(t, "Proforma puente vehicular", lista[0].Nombre)
-	assert.Equal(t, 42, lista[0].ObraID)
+	assert.Len(t, items, 1)
+	assert.Equal(t, "Cemento", items[0].Descripcion)
+}
 
-	encontrada, err := repo.ObtenerPorID(creada.ID)
+func TestProformaRepository_Notas(t *testing.T) {
+	repo := setupRepo(t)
+
+	proforma, err := repo.CrearProforma(models.Proforma{Nombre: "Con notas", ObraID: 1})
 	require.NoError(t, err)
-	assert.Equal(t, creada.Nombre, encontrada.Nombre)
+
+	nota, err := repo.AgregarNota(models.NotaProforma{
+		ProformaID: proforma.ID,
+		Contenido:  "Nota de prueba",
+	})
+	require.NoError(t, err)
+	assert.Greater(t, nota.ID, 0)
+
+	notas, err := repo.ObtenerNotas(proforma.ID)
+	require.NoError(t, err)
+	assert.Len(t, notas, 1)
+	assert.Equal(t, "Nota de prueba", notas[0].Contenido)
+}
+
+func TestProformaRepository_Clientes(t *testing.T) {
+	repo := setupRepo(t)
+
+	cliente, err := repo.CrearCliente(models.Cliente{Nombre: "Juan", Ruc: "1234567890"})
+	require.NoError(t, err)
+	assert.Greater(t, cliente.ID, 0)
+
+	clientes, err := repo.ObtenerClientes()
+	require.NoError(t, err)
+	assert.Len(t, clientes, 1)
+
+	obt, err := repo.ObtenerClientePorID(cliente.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "Juan", obt.Nombre)
+
+	act, err := repo.ActualizarCliente(cliente.ID, models.Cliente{Nombre: "Juan Actualizado", Ruc: "1234567890"})
+	require.NoError(t, err)
+	assert.Equal(t, "Juan Actualizado", act.Nombre)
+
+	assert.NoError(t, repo.EliminarCliente(cliente.ID))
+	_, err = repo.ObtenerClientePorID(cliente.ID)
+	assert.Error(t, err)
 }

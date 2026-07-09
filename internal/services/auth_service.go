@@ -3,6 +3,7 @@ package services
 import (
 	"strings"
 	"time"
+	"errors"
 
 	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
@@ -15,7 +16,8 @@ var secretoJWTProforma = []byte("proformas-2026-secret")
 var duracionTokenProforma = time.Hour * 24
 
 type ClaimsProforma struct {
-	UsuarioID int `json:"uid"`
+	UsuarioID int    `json:"uid"`
+	Rol       string `json:"rol"`
 	jwt.RegisteredClaims
 }
 
@@ -46,6 +48,7 @@ func (s *AuthService) Registrar(email, password string) (models.Usuario, error) 
 	return s.repo.CrearUsuario(models.Usuario{
 		Email:        email,
 		PasswordHash: string(hash),
+		Rol:          "cliente", // rol por defecto; nunca se toma del request público
 	})
 }
 
@@ -67,6 +70,7 @@ func (s *AuthService) Login(email, password string) (string, error) {
 func (s *AuthService) generarToken(u models.Usuario) (string, error) {
 	claims := ClaimsProforma{
 		UsuarioID: u.ID,
+		Rol:       u.Rol,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duracionTokenProforma)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -77,7 +81,9 @@ func (s *AuthService) generarToken(u models.Usuario) (string, error) {
 	return token.SignedString(secretoJWTProforma)
 }
 
-func (s *AuthService) VerificarToken(tokenStr string) (int, error) {
+// VerificarToken ahora devuelve los claims completos (con Rol incluido)
+// en lugar de solo el UsuarioID.
+func (s *AuthService) VerificarToken(tokenStr string) (*ClaimsProforma, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &ClaimsProforma{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, ErrCredencialesInvalidas
@@ -86,13 +92,39 @@ func (s *AuthService) VerificarToken(tokenStr string) (int, error) {
 	})
 
 	if err != nil || !token.Valid {
-		return 0, ErrCredencialesInvalidas
+		return nil, ErrCredencialesInvalidas
 	}
 
 	claims, ok := token.Claims.(*ClaimsProforma)
 	if !ok {
-		return 0, ErrCredencialesInvalidas
+		return nil, ErrCredencialesInvalidas
 	}
 
-	return claims.UsuarioID, nil
+	return claims, nil
+}
+func (s *AuthService) RegistrarConRol(email, password, rol string) (models.Usuario, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
+
+	if email == "" || strings.TrimSpace(password) == "" {
+		return models.Usuario{}, ErrEmailVacio
+	}
+
+	if rol != "admin" && rol != "cliente" {
+		return models.Usuario{}, errors.New("rol inválido: debe ser 'admin' o 'cliente'")
+	}
+
+	if _, existe := s.repo.BuscarPorEmail(email); existe {
+		return models.Usuario{}, ErrEmailEnUso
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return models.Usuario{}, err
+	}
+
+	return s.repo.CrearUsuario(models.Usuario{
+		Email:        email,
+		PasswordHash: string(hash),
+		Rol:          rol,
+	})
 }

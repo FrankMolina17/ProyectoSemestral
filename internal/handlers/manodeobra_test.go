@@ -8,12 +8,23 @@ import (
 	"testing"
 
 	"Sistem-Inte-Gestion-Control-Obras/internal/middleware"
+	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func obtenerTokenValido(t *testing.T, authSvc *services.AutenticacionService, s *storage.Storage) string {
+	t.Helper()
+	u, err := s.CrearUsuario(models.EntradaUsuario{Email: "test@test.com", Password: "123456"})
+	require.NoError(t, err)
+	token, err := authSvc.GenerarJWT(*u)
+	require.NoError(t, err)
+	return token
+}
 
 func setupManoObraRouter() (chi.Router, *services.AutenticacionService, *storage.Storage) {
 	fakeStorage := storage.New()

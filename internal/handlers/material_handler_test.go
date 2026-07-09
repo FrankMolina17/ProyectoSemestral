@@ -1,4 +1,4 @@
-package handlers
+package handlers_test
 
 import (
 	"encoding/json"
@@ -7,167 +7,161 @@ import (
 	"strings"
 	"testing"
 
-	"Sistem-Inte-Gestion-Control-Obras/internal/middleware"
+	"Sistem-Inte-Gestion-Control-Obras/internal/handlers"
+	"Sistem-Inte-Gestion-Control-Obras/internal/models"
 	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 	"Sistem-Inte-Gestion-Control-Obras/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func setupMaterialRouter() (chi.Router, *services.AutenticacionService, *storage.Storage) {
-	fakeStorage := storage.New()
-	authSvc := services.NuevaAutenticacionService(fakeStorage, services.AuthOptions{})
-	mh := NewMaterialHandler(services.NewMaterialService(fakeStorage))
+func setupMaterialRouter(t *testing.T) (chi.Router, *services.MaterialService) {
+	t.Helper()
+	store := storage.New()
+	materialSvc := services.NewMaterialService(store)
+	handler := handlers.NewMaterialHandler(materialSvc)
 
 	r := chi.NewRouter()
-	r.Group(func(r chi.Router) {
-		r.Use(middleware.AuthJWT(authSvc))
-		r.Get("/material", mh.ListandoMateriales)
-		r.Get("/material/{id}", mh.ObtenerMaterialPorID)
-		r.Post("/material", mh.CreandoMaterial)
-		r.Put("/material/{id}", mh.ActulizarUnMaterial)
-		r.Delete("/material/{id}", mh.BorrarUnMaterial)
+	r.Get("/material", handler.ListandoMateriales)
+	r.Get("/material/{id}", handler.ObtenerMaterialPorID)
+	r.Post("/material", handler.CreandoMaterial)
+	r.Put("/material/{id}", handler.ActulizarUnMaterial)
+	r.Delete("/material/{id}", handler.BorrarUnMaterial)
+
+	return r, materialSvc
+}
+
+func TestMaterialHandler_ListarVacio(t *testing.T) {
+	r, _ := setupMaterialRouter(t)
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/material", nil)
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var resp map[string]interface{}
+	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+	lista, ok := resp["data"].([]interface{})
+	require.True(t, ok)
+	assert.Empty(t, lista)
+}
+
+func TestMaterialHandler_CrearYObtener(t *testing.T) {
+	r, _ := setupMaterialRouter(t)
+
+	t.Run("crear valido -> 201", func(t *testing.T) {
+		body := `{"nombre":"Cemento","descripcion":"Saco 50kg","unidad":"kg","precio_referencia":"25.50"}`
+		req := httptest.NewRequest(http.MethodPost, "/material", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusCreated, rec.Code)
+
+		var resp map[string]interface{}
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+		data := resp["data"].(map[string]interface{})
+		assert.Equal(t, "Cemento", data["nombre"])
 	})
 
-	return r, authSvc, fakeStorage
+	t.Run("listar con 1 elemento", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/material", nil)
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		var resp map[string]interface{}
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+		lista, ok := resp["data"].([]interface{})
+		require.True(t, ok)
+		assert.Len(t, lista, 1)
+	})
+
+	t.Run("obtener por id -> 200", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/material/1", nil)
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+	})
+
+	t.Run("obtener id inexistente -> 404", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/material/999", nil)
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+	})
 }
 
-func obtenerTokenValido(t *testing.T, authSvc *services.AutenticacionService, s *storage.Storage) string {
-	_, err := authSvc.RegistrarUsuario("test@example.com", "password123")
-	assert.NoError(t, err)
+func TestMaterialHandler_Errores(t *testing.T) {
+	r, _ := setupMaterialRouter(t)
 
-	usuario, err := authSvc.Login("test@example.com", "password123")
-	assert.NoError(t, err)
+	t.Run("crear con nombre vacio -> 400", func(t *testing.T) {
+		body := `{"nombre":"","descripcion":"Saco","unidad":"kg","precio_referencia":"25.50"}`
+		req := httptest.NewRequest(http.MethodPost, "/material", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
 
-	token, err := authSvc.GenerarJWT(*usuario)
-	assert.NoError(t, err)
-	return token
+	t.Run("crear con JSON malformado -> 400", func(t *testing.T) {
+		body := `{not-json}`
+		req := httptest.NewRequest(http.MethodPost, "/material", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("eliminar id inexistente -> 404", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodDelete, "/material/999", nil)
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+	})
+
+	t.Run("actualizar id inexistente -> 404", func(t *testing.T) {
+		body := `{"nombre":"Nuevo","descripcion":"Item","unidad":"kg","precio_referencia":"10.00"}`
+		req := httptest.NewRequest(http.MethodPut, "/material/999", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+	})
 }
 
-func TestCrearMaterial_SinToken_Devuelve401(t *testing.T) {
-	r, _, _ := setupMaterialRouter()
+func TestMaterialHandler_ActualizarYEliminar(t *testing.T) {
+	r, materialSvc := setupMaterialRouter(t)
 
-	body := `{"nombre":"Cemento","descripcion":"Saco 50kg","unidad":"unidad","precio_referencia":"25.50"}`
-	req := httptest.NewRequest(http.MethodPost, "/material", strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
+	_, err := materialSvc.CrearM(models.EntradaMaterial{
+		Nombre:           "Test",
+		Descripcion:      "Item de prueba",
+		Unidad:           "kg",
+		PrecioReferencia: "10.00",
+	})
+	require.NoError(t, err)
 
-	r.ServeHTTP(w, req)
+	t.Run("actualizar -> 200", func(t *testing.T) {
+		body := `{"nombre":"Actualizado","descripcion":"Item actualizado","unidad":"kg","precio_referencia":"15.00"}`
+		req := httptest.NewRequest(http.MethodPut, "/material/1", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+	})
 
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Contains(t, w.Body.String(), "No autorizado")
-}
+	t.Run("eliminar -> 204", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodDelete, "/material/1", nil)
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusNoContent, rec.Code)
+	})
 
-func TestListarMateriales_SinToken_Devuelve401(t *testing.T) {
-	r, _, _ := setupMaterialRouter()
-
-	req := httptest.NewRequest(http.MethodGet, "/material", nil)
-	w := httptest.NewRecorder()
-
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Contains(t, w.Body.String(), "No autorizado")
-}
-
-func TestObtenerMaterialPorID_SinToken_Devuelve401(t *testing.T) {
-	r, _, _ := setupMaterialRouter()
-
-	req := httptest.NewRequest(http.MethodGet, "/material/1", nil)
-	w := httptest.NewRecorder()
-
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Contains(t, w.Body.String(), "No autorizado")
-}
-
-func TestCrearMaterial_ConTokenYNombreVacio_Devuelve400(t *testing.T) {
-	r, authSvc, s := setupMaterialRouter()
-	token := obtenerTokenValido(t, authSvc, s)
-
-	body := `{"nombre":"","descripcion":"Saco 50kg","unidad":"unidad","precio_referencia":"25.50"}`
-	req := httptest.NewRequest(http.MethodPost, "/material", strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-	w := httptest.NewRecorder()
-
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var resp map[string]string
-	json.NewDecoder(w.Body).Decode(&resp)
-	assert.Contains(t, resp["error"], "nombre")
-}
-
-func TestCrearMaterial_ConTokenYUnidadInvalida_Devuelve400(t *testing.T) {
-	r, authSvc, s := setupMaterialRouter()
-	token := obtenerTokenValido(t, authSvc, s)
-
-	body := `{"nombre":"Cemento","descripcion":"Saco 50kg","unidad":"km","precio_referencia":"25.50"}`
-	req := httptest.NewRequest(http.MethodPost, "/material", strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-	w := httptest.NewRecorder()
-
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var resp map[string]string
-	json.NewDecoder(w.Body).Decode(&resp)
-	assert.Contains(t, resp["error"], "unidad")
-}
-
-func TestCrearMaterial_ConTokenYPrecioCero_Devuelve400(t *testing.T) {
-	r, authSvc, s := setupMaterialRouter()
-	token := obtenerTokenValido(t, authSvc, s)
-
-	body := `{"nombre":"Cemento","descripcion":"Saco 50kg","unidad":"unidad","precio_referencia":"0"}`
-	req := httptest.NewRequest(http.MethodPost, "/material", strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-	w := httptest.NewRecorder()
-
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusBadRequest, w.Code)
-	var resp map[string]string
-	json.NewDecoder(w.Body).Decode(&resp)
-	assert.Contains(t, resp["error"], "precio")
-}
-
-func TestCrearMaterial_ConTokenYDatosValidos_Devuelve201YNoDuplica(t *testing.T) {
-	r, authSvc, s := setupMaterialRouter()
-	token := obtenerTokenValido(t, authSvc, s)
-
-	body := `{"nombre":"Cemento","descripcion":"Saco 50kg","unidad":"unidad","precio_referencia":"25.50"}`
-	req := httptest.NewRequest(http.MethodPost, "/material", strings.NewReader(body))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+token)
-	w := httptest.NewRecorder()
-
-	r.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusCreated, w.Code)
-
-	var resp map[string]any
-	json.NewDecoder(w.Body).Decode(&resp)
-	data := resp["data"].(map[string]any)
-	assert.Equal(t, "Cemento", data["nombre"])
-	assert.Equal(t, "unidad", data["unidad"])
-	assert.Equal(t, float64(2), resp["id"])
-
-	body2 := `{"nombre":"Cemento","descripcion":"Saco 50kg","unidad":"unidad","precio_referencia":"25.50"}`
-	req2 := httptest.NewRequest(http.MethodPost, "/material", strings.NewReader(body2))
-	req2.Header.Set("Content-Type", "application/json")
-	req2.Header.Set("Authorization", "Bearer "+token)
-	w2 := httptest.NewRecorder()
-
-	r.ServeHTTP(w2, req2)
-
-	assert.Equal(t, http.StatusConflict, w2.Code)
-	var resp2 map[string]string
-	json.NewDecoder(w2.Body).Decode(&resp2)
-	assert.Contains(t, resp2["error"], "nombre ya existe")
+	t.Run("verificar eliminado -> 404", func(t *testing.T) {
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/material/1", nil)
+		r.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+	})
 }

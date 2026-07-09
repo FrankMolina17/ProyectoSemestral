@@ -9,10 +9,12 @@ import (
 	"Sistem-Inte-Gestion-Control-Obras/internal/services"
 )
 
-// ==================== Auth para Catálogo (Módulo 1) ====================
 type contextoClave string
 
-const contextoClaveKey = contextoClave("usuarioID")
+const (
+	contextoClaveKey    = contextoClave("usuarioID")
+	contextoClaveRol    = contextoClave("rol")
+)
 
 func AuthJWT(authSvc *services.AutenticacionService) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -33,12 +35,12 @@ func AuthJWT(authSvc *services.AutenticacionService) func(next http.Handler) htt
 			}
 
 			ctx := context.WithValue(r.Context(), contextoClaveKey, claims.UsuarioID)
+			ctx = context.WithValue(ctx, contextoClaveRol, claims.Rol)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
 
-// ==================== Auth para Proformas (Módulo 2) ====================
 func VerificarJWT(authSvc *services.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,20 +56,40 @@ func VerificarJWT(authSvc *services.AuthService) func(http.Handler) http.Handler
 				return
 			}
 
-			_, err := authSvc.VerificarToken(partes[1])
+			claims, err := authSvc.VerificarToken(partes[1])
 			if err != nil {
 				http.Error(w, `{"error":"token inválido o expirado"}`, http.StatusUnauthorized)
 				return
 			}
 
+			ctx := context.WithValue(r.Context(), contextoClaveKey, claims.UsuarioID)
+			ctx = context.WithValue(ctx, contextoClaveRol, claims.Rol)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+func RequerirRol(rol string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userRol, ok := r.Context().Value(contextoClaveRol).(string)
+			if !ok || userRol != rol {
+				Prohibido(w)
+				return
+			}
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-// ==================== Helper ====================
 func NoAutorizado(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusUnauthorized)
 	_ = json.NewEncoder(w).Encode(map[string]string{"error": "No autorizado"})
+}
+
+func Prohibido(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusForbidden)
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": "No tienes permisos para acceder a este recurso"})
 }

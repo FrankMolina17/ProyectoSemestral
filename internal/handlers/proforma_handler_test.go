@@ -29,10 +29,12 @@ func setupTestRouter() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.CORS)
 
+	authHandler := handlers.NuevoAuthHandler(authService)
+
 	r.Route("/api/v1/auth", func(r chi.Router) {
-		authHandler := handlers.NuevoAuthHandler(authService)
 		r.Post("/register", authHandler.Registrar)
 		r.Post("/login", authHandler.Login)
+		r.Post("/register-admin", authHandler.RegistrarAdmin)
 	})
 
 	r.Group(func(r chi.Router) {
@@ -104,4 +106,75 @@ func TestCrearProforma_ConToken(t *testing.T) {
 	assert.Equal(t, "Proforma remodelación", proforma["nombre"])
 	assert.Equal(t, float64(7), proforma["obra_id"])
 	assert.Equal(t, "borrador", proforma["estado"])
+}
+
+func TestRegistrarAdmin(t *testing.T) {
+	router := setupTestRouter()
+
+	t.Run("crear admin -> 201", func(t *testing.T) {
+		body := bytes.NewBufferString(`{"email":"admin@uleam.edu.ec","password":"admin123","rol":"admin"}`)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register-admin", body)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusCreated, rec.Code)
+
+		var resp map[string]interface{}
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+		assert.Equal(t, "admin@uleam.edu.ec", resp["email"])
+		assert.Equal(t, "admin", resp["rol"])
+	})
+
+	t.Run("sin rol -> default admin", func(t *testing.T) {
+		body := bytes.NewBufferString(`{"email":"admin2@uleam.edu.ec","password":"admin123"}`)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register-admin", body)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusCreated, rec.Code)
+
+		var resp map[string]interface{}
+		require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
+		assert.Equal(t, "admin", resp["rol"])
+	})
+
+	t.Run("email duplicado -> 400", func(t *testing.T) {
+		body := bytes.NewBufferString(`{"email":"admin@uleam.edu.ec","password":"admin123","rol":"admin"}`)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register-admin", body)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+}
+
+func TestAuthHandler_Errores(t *testing.T) {
+	router := setupTestRouter()
+
+	t.Run("register JSON malformado -> 400", func(t *testing.T) {
+		body := bytes.NewBufferString(`{roto}`)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", body)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("register email vacio -> 400", func(t *testing.T) {
+		body := bytes.NewBufferString(`{"email":"","password":"123456"}`)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/register", body)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("login credenciales invalidas -> 401", func(t *testing.T) {
+		body := bytes.NewBufferString(`{"email":"noexiste@test.com","password":"wrong"}`)
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", body)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
 }

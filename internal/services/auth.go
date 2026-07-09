@@ -23,6 +23,7 @@ const DuracionJWT = time.Hour * 24
 type Claims struct {
 	UsuarioID int    `json:"usuario_id"`
 	Email     string `json:"email"`
+	Rol       string `json:"rol"`
 	jwt.RegisteredClaims
 }
 
@@ -97,6 +98,7 @@ func (s *AutenticacionService) GenerarJWT(usuario models.Usuario) (string, error
 	claims := Claims{
 		UsuarioID: usuario.ID,
 		Email:     usuario.Email,
+		Rol:       usuario.Rol,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(s.duracionJwt)),
 		},
