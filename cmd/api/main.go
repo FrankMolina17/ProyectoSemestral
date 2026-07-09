@@ -16,12 +16,34 @@ import (
 )
 
 func main() {
-	// Módulo 2 — Proformas (patrón Factory)
+	// ── Módulo 1 — Catálogo (Melani) ──
+	s := storage.NuevoCatalogoStorage()
+	s.Seed()
+
+	manoObraSvc := services.NuevoManoObraService(s)
+	materialSvc := services.NuevoMaterialService(s)
+	equipoSvc := services.NuevoEquipoService(s)
+	precioSvc := services.NuevoPreciosService(s)
+
+	mh := handlers.NuevoMaterialHandler(materialSvc)
+	mob := handlers.NuevoManoObraHandler(manoObraSvc)
+	eh := handlers.NuevoEquipoHandler(equipoSvc)
+	ph := handlers.NuevoPrecioHandler(precioSvc)
+
+	authServiceCatalogo := services.NuevaAutenticacionService(s)
+	serverC := handlers.NuevoServerC(
+		manoObraSvc,
+		materialSvc,
+		equipoSvc,
+		precioSvc,
+		authServiceCatalogo,
+	)
+
+	// ── Módulo 2 — Proformas (Franklin) — patrón Factory ──
 	dsn := os.Getenv("DB_DSN")
 	if dsn == "" {
-		dsn = "proformas.db"
+		dsn = "proforma.db"
 	}
-
 	recursos, err := storage.InicializarModulo2(dsn)
 	if err != nil {
 		log.Fatalf("error inicializando módulo 2: %v", err)
@@ -36,10 +58,15 @@ func main() {
 	proformaHandler := handlers.NuevoHandler(proformaService)
 	authHandler := handlers.NuevoAuthHandler(authService)
 
+	// ── Router ──
 	r := chi.NewRouter()
 	r.Use(chimw.Logger)
 	r.Use(chimw.Recoverer)
 	r.Use(middleware.CORS)
+
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Sistema de Gestion y Control de Obras - API funcionando"))
+	})
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -47,11 +74,51 @@ func main() {
 		w.Write([]byte(`{"estado":"ok","modulo":"proformas"}`))
 	})
 
+	// Auth Módulo 1
+	r.Post("/api/v1/usuarios/registrar", serverC.RegistrarUser)
+	r.Post("/aios/login", serverC.LoginUser)
+	r.Route("/api/v1/auth/catalogo", func(r chi.Router) {
+		r.Post("/login", serverC.LoginUser)
+	})
+
+	// Auth Módulo 2
 	r.Route("/api/v1/auth", func(r chi.Router) {
 		r.Post("/register", authHandler.Registrar)
 		r.Post("/login", authHandler.Login)
 	})
 
+	// Rutas Módulo 1
+	r.Route("/api/v1/catalogo", func(r chi.Router) {
+		r.Use(middleware.AuthJWT(authServiceCatalogo))
+
+		r.Get("/material", mh.ListandoMateriales)
+		r.Get("/material/{id}", mh.ObtenerMaterialPorID)
+		r.Post("/material", mh.CreandoMaterial)
+		r.Put("/material/{id}", mh.ActulizarUnMaterial)
+		r.Delete("/material/{id}", mh.BorrarUnMaterial)
+
+		r.Get("/manoobra", mob.ListarUnaManoObra)
+		r.Get("/manoobra/{id}", mob.ObtenerUnaManoObraPorID)
+		r.Post("/manoobra", mob.CreandoUnaManoObra)
+		r.Put("/manoobra/{id}", mob.ActualizadoUnaManoObra)
+		r.Delete("/manoobra/{id}", mob.BorrandoUnaManoObra)
+
+		r.Get("/equipo", eh.ListandoLosEquipos)
+		r.Get("/equipo/{id}", eh.ObtenerUnEquipoPorID)
+		r.Post("/equipo", eh.CrearUnEquipo)
+		r.Put("/equipo/{id}", eh.ActualizarUnEquipo)
+		r.Delete("/equipo/{id}", eh.BorrarUnEquipo)
+
+		r.Get("/precio", ph.ListarDeLosPrecios)
+		r.Post("/precio", ph.CrearUnPrecio)
+		r.Get("/precio/{tipo}/{recursoID}/vigente", ph.PrecioVigentePorRecurso)
+		r.Get("/precio/{tipo}/{recursoID}", ph.HistorialPorRecurso)
+		r.Get("/precio/{id}", ph.ObtenerUnPrecioPorID)
+		r.Put("/precio/{id}", ph.ActualizarUnPrecio)
+		r.Delete("/precio/{id}", ph.BorrarUnPrecio)
+	})
+
+	// Rutas Módulo 2
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.VerificarJWT(authService))
 
@@ -77,9 +144,9 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8082"
+		port = "3000"
 	}
 	addr := fmt.Sprintf(":%s", port)
-	log.Printf("M2 Proformas escuchando en http://localhost%s", addr)
+	log.Printf("API escuchando en http://localhost%s", addr)
 	log.Fatal(http.ListenAndServe(addr, r))
 }
