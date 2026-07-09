@@ -30,7 +30,7 @@ func (s *UsuarioStorage) CrearUsuario(u models.Usuario) (models.Usuario, error) 
 	}
 
 	u.ID = s.nextID
-	u.CreadoEn = time.Now()
+	u.CreatedAt = time.Now()
 	s.usuarios[u.Email] = u
 	s.nextID++
 	return u, nil

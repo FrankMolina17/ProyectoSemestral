@@ -41,7 +41,7 @@ func (h *AuthHandler) Registrar(w http.ResponseWriter, r *http.Request) {
 	responderJSON(w, http.StatusCreated, map[string]interface{}{
 		"id":        u.ID,
 		"email":     u.Email,
-		"creado_en": u.CreadoEn,
+		"creado_en": u.CreatedAt,
 	})
 }
 
@@ -65,5 +65,43 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	responderJSON(w, http.StatusOK, map[string]string{
 		"token": token,
+	})
+}
+
+
+
+type credencialesConRol struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Rol      string `json:"rol"`
+}
+
+func (h *AuthHandler) RegistrarAdmin(w http.ResponseWriter, r *http.Request) {
+	var creds credencialesConRol
+
+	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": "cuerpo del request inválido",
+		})
+		return
+	}
+
+	if creds.Rol == "" {
+		creds.Rol = "admin" // este endpoint es exclusivamente para crear admins
+	}
+
+	u, err := h.service.RegistrarConRol(creds.Email, creds.Password, creds.Rol)
+	if err != nil {
+		responderJSON(w, http.StatusBadRequest, map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	responderJSON(w, http.StatusCreated, map[string]interface{}{
+		"id":        u.ID,
+		"email":     u.Email,
+		"rol":       u.Rol,
+		"creado_en": u.CreatedAt,
 	})
 }
