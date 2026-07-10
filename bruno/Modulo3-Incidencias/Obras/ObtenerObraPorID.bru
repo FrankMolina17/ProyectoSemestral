@@ -1,0 +1,10 @@
+meta {
+  name: ObtenerObraPorID
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{Url}}/api/v1/obras/{{obraId}}
+  auth: bearer
+}

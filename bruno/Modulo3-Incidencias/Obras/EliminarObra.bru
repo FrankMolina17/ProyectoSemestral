@@ -1,0 +1,10 @@
+meta {
+  name: EliminarObra
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{Url}}/api/v1/obras/{{obraId}}
+  auth: bearer
+}

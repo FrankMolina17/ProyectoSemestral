@@ -1,0 +1,21 @@
+meta {
+  name: ActualizarIncidencia
+  type: http
+  seq: 1
+}
+
+put {
+  url: {{Url}}/api/v1/incidencias/{{incidenciaId}}
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "estado": "cerrada"
+  }
+}

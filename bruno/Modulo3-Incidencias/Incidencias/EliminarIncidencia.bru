@@ -1,0 +1,10 @@
+meta {
+  name: EliminarIncidencia
+  type: http
+  seq: 1
+}
+
+delete {
+  url: {{Url}}/api/v1/incidencias/{{incidenciaId}}
+  auth: bearer
+}

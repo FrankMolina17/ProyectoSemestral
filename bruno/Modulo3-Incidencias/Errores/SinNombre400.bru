@@ -1,0 +1,21 @@
+meta {
+  name: SinNombre400
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{Url}}/api/v1/obras
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "descripcion": "Falta el nombre de la obra"
+  }
+}

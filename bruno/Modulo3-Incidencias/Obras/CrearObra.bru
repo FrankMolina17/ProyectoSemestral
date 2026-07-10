@@ -1,0 +1,27 @@
+meta {
+  name: CrearObra
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{Url}}/api/v1/obras
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "nombre": "Construcción Mall del Valle",
+    "descripcion": "Centro comercial moderno",
+    "ubicacion": "Av. Amazonas",
+    "fecha_inicio": "2026-08-15",
+    "fecha_fin": "2027-04-20",
+    "presupuesto_estimado": 1250000,
+    "user_id": 1
+  }
+}

@@ -1,0 +1,10 @@
+meta {
+  name: IncidenciasPorEntidad
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{Url}}/api/v1/incidencias/por/obra/{{obraId}}
+  auth: bearer
+}

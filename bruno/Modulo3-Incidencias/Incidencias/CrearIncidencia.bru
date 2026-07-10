@@ -1,0 +1,26 @@
+meta {
+  name: CrearIncidencia
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{Url}}/api/v1/incidencias
+  body: json
+  auth: bearer
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "titulo": "Retraso por falta de materiales",
+    "descripcion": "No han llegado los hierros",
+    "entidad_tipo": "obra",
+    "entidad_id": {{obraId}},
+    "prioridad": "alta",
+    "responsable_id": 2
+  }
+}
